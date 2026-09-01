@@ -1,17 +1,18 @@
 "use client"
 
-import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { HomeIcon, MessageCircleIcon, BookOpenIcon, SettingsIcon } from "lucide-react"
+import { HomeIcon, MessageCircleIcon, BookOpenIcon, CalendarDaysIcon, SettingsIcon } from "lucide-react"
+import { Dock, DockItem } from "@/components/ui/dock"
 
 const ITEMS = [
-  { href: "/home", label: "Home", Icon: HomeIcon },
-  { href: "/ask", label: "Ask", Icon: MessageCircleIcon },
-  { href: "/learn", label: "Learn", Icon: BookOpenIcon },
-  { href: "/settings", label: "Settings", Icon: SettingsIcon },
+  { href: "/home", label: "Home", icon: HomeIcon },
+  { href: "/agents", label: "Agents", icon: MessageCircleIcon },
+  { href: "/calendar", label: "Calendar", icon: CalendarDaysIcon },
+  { href: "/learn", label: "Learn", icon: BookOpenIcon },
+  { href: "/settings", label: "Settings", icon: SettingsIcon },
 ]
 
-const HIDE_ON: string[] = ["/", "/onboard"]
+const HIDE_ON: string[] = ["/", "/login", "/onboard"]
 
 export function BottomNav() {
   const pathname = usePathname()
@@ -19,21 +20,13 @@ export function BottomNav() {
   if (HIDE_ON.some((p) => pathname === p || pathname.startsWith(p + "/"))) return null
 
   return (
-    <nav className="bottom-nav" aria-label="Primary">
-      {ITEMS.map(({ href, label, Icon }) => {
-        const active = pathname === href
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={active ? "active" : ""}
-            aria-current={active ? "page" : undefined}
-          >
-            <Icon size={20} aria-hidden strokeWidth={active ? 2.5 : 2} />
-            <span>{label}</span>
-          </Link>
-        )
+    <Dock>
+      {ITEMS.map(({ href, label, icon }) => {
+        const active =
+          pathname === href ||
+          (href === "/agents" && (pathname === "/ask" || pathname.startsWith("/agents/")))
+        return <DockItem key={href} href={href} label={label} icon={icon} active={active} />
       })}
-    </nav>
+    </Dock>
   )
 }

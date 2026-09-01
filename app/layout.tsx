@@ -1,24 +1,38 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { ThemeSync } from "@/components/layout/ThemeSync"
+import { PwaRegister } from "@/components/layout/PwaRegister"
 
 export const metadata: Metadata = {
   title: "Steward — AI advisor for small farms",
   description: "Voice-first AI advisory companion for small farms in England.",
+  applicationName: "Steward",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Steward",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/icons/icon.svg", type: "image/svg+xml" }],
+  },
 }
 
-export const viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#15803d",
+  viewportFit: "cover",
 }
 
 // Runs synchronously before React hydration to avoid a flash of light theme
-// when the user has dark mode / large-text on.
 const themeBootstrap = `
 try {
-  var raw = localStorage.getItem('steward.profile.v1');
+  var raw = localStorage.getItem('steward.profile.v2') || localStorage.getItem('steward.profile.v1');
   if (raw) {
     var p = JSON.parse(raw);
     if (p && p.dark_mode) document.documentElement.classList.add('dark');
@@ -32,9 +46,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en-GB" className="h-full antialiased">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
+        <link rel="mask-icon" href="/icons/icon.svg" color="#15803d" />
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeSync />
+        <PwaRegister />
         {children}
         <BottomNav />
       </body>

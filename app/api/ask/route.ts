@@ -10,6 +10,8 @@ export const maxDuration = 30
 
 type AskBody = {
   text: string
+  agent_id?: string
+  behaviour_summary?: string
   profile?: {
     id?: string
     points?: number
@@ -22,6 +24,8 @@ type AskBody = {
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as AskBody
   const text = (body.text ?? "").toString().trim()
+  const agentId = body.agent_id || "steward"
+  const behaviourSummary = body.behaviour_summary
   const profile = body.profile ?? {}
   const currentBadges = new Set(profile.badges ?? [])
 
@@ -57,10 +61,11 @@ export async function POST(req: NextRequest) {
       points_earned: 0,
       total_points: profile.points ?? 0,
       level: levelFor(profile.points ?? 0),
+      agent: agentId,
+      llm: "guardrail",
     })
   }
 
-  // Sensor context
   let sensorContext = ""
   let sensorUsed = false
   if (profile.has_sensors) {
@@ -69,7 +74,11 @@ export async function POST(req: NextRequest) {
     if (sensorContext) sensorUsed = true
   }
 
-  const result = await askInternal(normalised, sensorContext)
+  const result = await askInternal(normalised, {
+    agentId,
+    sensorContext,
+    behaviourSummary,
+  })
 
   const pointsEarned = 5
   const nextPoints = (profile.points ?? 0) + pointsEarned
@@ -100,5 +109,7 @@ export async function POST(req: NextRequest) {
     points_earned: pointsEarned,
     total_points: nextPoints,
     level: levelFor(nextPoints),
+    agent: result.agent,
+    llm: result.llm,
   })
 }

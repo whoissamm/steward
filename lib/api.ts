@@ -34,6 +34,8 @@ export type AskResponse = {
   points_earned: number
   total_points: number
   level: string
+  agent?: string
+  llm?: "gemini" | "offline_tfidf" | "guardrail"
 }
 
 export type PlanTodo = { id: string; text: string; done: boolean }
@@ -89,7 +91,11 @@ export const api = {
   async health(): Promise<{ status: string; llm: string }> {
     return jsonFetch("/api/health")
   },
-  async ask(text: string, profile?: Profile): Promise<AskResponse> {
+  async ask(
+    text: string,
+    profile?: Profile,
+    opts?: { agentId?: string; behaviourSummary?: string },
+  ): Promise<AskResponse> {
     const slim = profile
       ? {
           id: profile.id,
@@ -101,7 +107,12 @@ export const api = {
       : null
     return jsonFetch("/api/ask", {
       method: "POST",
-      body: JSON.stringify({ text, profile: slim }),
+      body: JSON.stringify({
+        text,
+        profile: slim,
+        agent_id: opts?.agentId,
+        behaviour_summary: opts?.behaviourSummary,
+      }),
     })
   },
   async plan(farm = "mixed", hasSensors = false): Promise<PlanResponse> {

@@ -135,16 +135,37 @@ export function useAudio(accent: string, readAloud: boolean) {
   }, [cleanupStream])
 
   const speak = useCallback(
-    (text: string) => {
-      if (!readAloud) return
-      if (typeof window === "undefined" || !("speechSynthesis" in window)) return
-      const voiced = dialectify(text, accent)
-      const utter = new SpeechSynthesisUtterance(voiced)
-      utter.lang = "en-GB"
-      utter.rate = 1
-      utter.pitch = 1
-      window.speechSynthesis.cancel()
+    async (text: string) => {
+      if (!readAloud || typeof window === "undefined") return
       try {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, accent }),
+        })
+        const ctype = res.headers.get("content-type") || ""
+        if (res.ok && ctype.includes("audio/")) {
+          const blob = await res.blob()
+          const url = URL.createObjectURL(blob)
+          const audio = new Audio(url)
+          audio.onended = () => URL.revokeObjectURL(url)
+          audio.onerror = () => URL.revokeObjectURL(url)
+          try {
+            await audio.play()
+          } catch (e) {
+            URL.revokeObjectURL(url)
+            setError(`Playback blocked: ${(e as Error).message}. Tap the speaker button to enable audio.`)
+          }
+          return
+        }
+        // JSON fallback = browser TTS with dialectified text
+        const data = (await res.json().catch(() => null)) as { dialect_text?: string } | null
+        if (!("speechSynthesis" in window)) return
+        const utter = new SpeechSynthesisUtterance(data?.dialect_text || dialectify(text, accent))
+        utter.lang = "en-GB"
+        utter.rate = 1
+        utter.pitch = 1
+        window.speechSynthesis.cancel()
         window.speechSynthesis.speak(utter)
       } catch (e) {
         setError(`Could not read aloud: ${(e as Error).message}`)

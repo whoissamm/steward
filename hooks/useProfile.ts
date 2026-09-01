@@ -1,18 +1,26 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import type { Profile } from "@/lib/api"
-import { DEFAULT_PROFILE, loadLocalProfile, saveLocalProfile } from "@/lib/profile"
+import {
+  DEFAULT_PROFILE,
+  loadLocalProfile,
+  saveLocalProfile,
+  markCompletionToday,
+  pushActivity,
+  type ProfileV2,
+} from "@/lib/profile"
 
 export type ProfileState = {
-  profile: Profile
+  profile: ProfileV2
   loaded: boolean
-  update: (patch: Partial<Profile>) => void
-  replace: (next: Profile) => void
+  update: (patch: Partial<ProfileV2>) => void
+  replace: (next: ProfileV2) => void
+  markCompletion: () => void
+  logActivity: (action: string, meta?: Record<string, unknown>) => void
 }
 
 export function useProfile(): ProfileState {
-  const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE)
+  const [profile, setProfile] = useState<ProfileV2>(DEFAULT_PROFILE)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -21,7 +29,7 @@ export function useProfile(): ProfileState {
     setLoaded(true)
   }, [])
 
-  const update = useCallback((patch: Partial<Profile>) => {
+  const update = useCallback((patch: Partial<ProfileV2>) => {
     setProfile((prev) => {
       const next = { ...prev, ...patch }
       saveLocalProfile(next)
@@ -29,10 +37,26 @@ export function useProfile(): ProfileState {
     })
   }, [])
 
-  const replace = useCallback((next: Profile) => {
+  const replace = useCallback((next: ProfileV2) => {
     saveLocalProfile(next)
     setProfile(next)
   }, [])
 
-  return { profile, loaded, update, replace }
+  const markCompletion = useCallback(() => {
+    setProfile((prev) => {
+      const next = markCompletionToday(prev)
+      saveLocalProfile(next)
+      return next
+    })
+  }, [])
+
+  const logActivity = useCallback((action: string, meta?: Record<string, unknown>) => {
+    setProfile((prev) => {
+      const next = pushActivity(prev, action, meta)
+      saveLocalProfile(next)
+      return next
+    })
+  }, [])
+
+  return { profile, loaded, update, replace, markCompletion, logActivity }
 }

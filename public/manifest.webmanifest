@@ -1,0 +1,33 @@
+{
+  "name": "Steward — farm advisor",
+  "short_name": "Steward",
+  "description": "Voice-first AI advisory companion for small farms in England.",
+  "start_url": "/home",
+  "display": "standalone",
+  "background_color": "#fafaf9",
+  "theme_color": "#15803d",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities", "education"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ask Steward",
+      "short_name": "Ask",
+      "description": "Talk to your farm advisor",
+      "url": "/ask"
+    },
+    {
+      "name": "Today's plan",
+      "short_name": "Plan",
+      "description": "Today's farm todo list",
+      "url": "/todos"
+    }
+  ]
+}
