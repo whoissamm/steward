@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Steward
 
-## Getting Started
+Voice-first AI advisory companion for small farms in England.
 
-First, run the development server:
+Steward answers plain-language farm questions using a curated knowledge base of GOV.UK, AHDB and Met Office sources. It shows a confidence tag and citations on every answer, abstains when unsure, and steps back to a licensed adviser for regulated decisions (vet, pesticide, disposal).
+
+## Stack
+
+- Next.js 16 (App Router) + React 19
+- TypeScript, Tailwind 4
+- Serverless API routes (`app/api/*`) — no separate backend service
+- Optional Google Gemini via `GEMINI_API_KEY` (falls back to a TF-IDF extractive answerer that still cites sources and abstains correctly)
+
+## Running locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Optional env vars (add to `.env.local` or Vercel project settings):
 
-## Learn More
+```
+GEMINI_API_KEY=...           # Enables LLM-generated answers grounded in the KB
+GEMINI_MODEL=gemini-flash-latest
+```
 
-To learn more about Next.js, take a look at the following resources:
+Without a key the app runs in **offline mode** — retrieval + guardrails + citation still work; the answer text is composed extractively from the KB passages.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Testing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm test        # Vitest — unit tests for retrieval, guardrails, dialect, plan, sensors, gamification
+npm run build   # Type-check + production build
+```
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Push to `main` on the linked GitHub repo — Vercel deploys automatically.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Product surface
+
+- `/onboard` — 4 steps: name, accent (11 regional voices), farm type, sensors on/off
+- `/home` — level ring + XP, daily plan, live sensor panel (if enabled), suggested questions
+- `/ask` — chat with voice input (browser Web Speech API), rich bubbles with topic / confidence / sources / follow-ups / read-aloud
+- `/learn` — 5 lessons + 2-question quiz on AI literacy
+- `/settings` — accent, farm type, sensors, read-aloud, dark mode, larger text, reset progress
