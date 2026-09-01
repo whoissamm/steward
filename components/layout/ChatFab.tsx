@@ -8,7 +8,12 @@ import { useEffect, useState } from "react"
 import { useProfile } from "@/hooks/useProfile"
 import { hasOnboarded } from "@/lib/profile"
 
-const HIDE_ON = ["/", "/login", "/onboard", "/agents/"]
+// FAB hidden on:
+// - splash / login / onboard (pre-product)
+// - /home (no AI bots on the home screen per product decision)
+// - /agents list + /agents/[id] (agents live there — no FAB needed)
+const HIDE_EXACT = new Set(["/", "/login", "/onboard", "/home", "/agents"])
+const HIDE_PREFIX = ["/agents/"]
 
 export function ChatFab() {
   const pathname = usePathname()
@@ -16,13 +21,14 @@ export function ChatFab() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    // Delay reveal slightly so it doesn't fight the page's own reveal animations
+    setVisible(false)
     const t = setTimeout(() => setVisible(true), 400)
     return () => clearTimeout(t)
   }, [pathname])
 
   if (!pathname) return null
-  if (HIDE_ON.some((p) => pathname === p || pathname.startsWith(p + "/") || (p.endsWith("/") && pathname.startsWith(p)))) return null
+  if (HIDE_EXACT.has(pathname)) return null
+  if (HIDE_PREFIX.some((p) => pathname.startsWith(p))) return null
   if (!loaded || !hasOnboarded(profile)) return null
 
   const agent = profile.agent_preference || "steward"

@@ -1,53 +1,29 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
-  SproutIcon,
-  CloudRainIcon,
-  LandmarkIcon,
-  StethoscopeIcon,
-  ShoppingBasketIcon,
   FlameIcon,
   DropletIcon,
   ClipboardListIcon,
-  BookOpenIcon,
   TrendingUpIcon,
-  MessageCircleIcon,
   CalendarDaysIcon,
   ThermometerIcon,
   WindIcon,
   ArrowRightIcon,
   AwardIcon,
+  BookOpenIcon,
 } from "lucide-react"
 import { useProfile } from "@/hooks/useProfile"
 import { useSensors } from "@/hooks/useSensors"
 import { greetingFor } from "@/lib/dialect"
-import { hasOnboarded, totalNetProfit } from "@/lib/profile"
+import { hasOnboarded, totalNetProfit, todayIso } from "@/lib/profile"
 import { levelFor, nextLevel, BADGES } from "@/lib/gamification"
-import { AgentDock, type AgentBadge } from "@/components/ui/agent-dock"
 import { StatWidget } from "@/components/ui/stat-widget"
 import { HealthBar } from "@/components/ui/health-bar"
 import { ShimmerLoader } from "@/components/ui/shimmer-loader"
-
-const AGENT_ICONS: Record<string, typeof SproutIcon> = {
-  sprout: SproutIcon,
-  "cloud-rain": CloudRainIcon,
-  landmark: LandmarkIcon,
-  stethoscope: StethoscopeIcon,
-  "shopping-basket": ShoppingBasketIcon,
-}
-
-type ApiAgent = {
-  id: string
-  name: string
-  role: string
-  tagline: string
-  color: string
-  iconKey: string
-}
 
 export default function HomePage() {
   const router = useRouter()
@@ -60,29 +36,6 @@ export default function HomePage() {
     }
   }, [loaded, profile, router])
 
-  // Static agent list mirrors backend — avoids a second fetch on first paint.
-  const agents: ApiAgent[] = useMemo(
-    () => [
-      { id: "steward", name: "Steward", role: "General farm advisor", tagline: "Your everyday farm companion.", color: "#15803d", iconKey: "sprout" },
-      { id: "weather", name: "Weather Ken", role: "Weather & spray", tagline: "Frost, rain, wind.", color: "#2563eb", iconKey: "cloud-rain" },
-      { id: "grants", name: "Grant Advisor", role: "Schemes & funding", tagline: "SFI, CS, deadlines.", color: "#7c3aed", iconKey: "landmark" },
-      { id: "soil", name: "Soil Doctor", role: "Soil, nutrients & water", tagline: "Reads your sensors.", color: "#78716c", iconKey: "sprout" },
-      { id: "vet_bridge", name: "Vet Bridge", role: "Livestock signposter", tagline: "Guides you to a vet.", color: "#d97706", iconKey: "stethoscope" },
-      { id: "market", name: "Market Guide", role: "Selling direct", tagline: "Box schemes, margins.", color: "#b45309", iconKey: "shopping-basket" },
-    ],
-    [],
-  )
-
-  const agentBadges: AgentBadge[] = useMemo(
-    () => agents.map((a) => ({ ...a, icon: AGENT_ICONS[a.iconKey] || SproutIcon })),
-    [agents],
-  )
-
-  const next = nextLevel(profile.points)
-  const level = levelFor(profile.points)
-  const profitTotal = totalNetProfit(profile.profit_entries)
-  const farmHealth = computeFarmHealth(profile.streak, profile.turns, profile.badges.length, readings?.soil_moisture)
-
   if (!loaded || !hasOnboarded(profile)) {
     return (
       <main className="screen">
@@ -93,10 +46,15 @@ export default function HomePage() {
   }
 
   const greeting = greetingFor(profile.accent, profile.name)
+  const level = levelFor(profile.points)
+  const next = nextLevel(profile.points)
+  const profitTotal = totalNetProfit(profile.profit_entries)
+  const farmHealth = computeFarmHealth(profile.streak, profile.turns, profile.badges.length, readings?.soil_moisture)
+  const t = todayIso()
+  const completedToday = profile.completed_dates.includes(t)
 
   return (
     <main className="screen">
-      {/* Cinematic welcome hero */}
       <motion.section
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -105,16 +63,21 @@ export default function HomePage() {
       >
         <p className="sec">Welcome back</p>
         <h1 className="text-3xl md:text-4xl font-bold leading-tight">{greeting}.</h1>
-        <p className="text-[color:var(--muted)]">
-          {level}
-          {next && (<> · {next.needed} pts to {next.name}</>)}
+        <p className="text-[color:var(--muted)] flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span>{level}</span>
+          {next && <><span aria-hidden>·</span><span>{next.needed} pts to {next.name}</span></>}
           {profile.streak > 0 && (
-            <> · <FlameIcon className="inline text-[color:var(--amber-500)] -mt-0.5" size={14} aria-hidden /> {profile.streak}-day streak</>
+            <>
+              <span aria-hidden>·</span>
+              <span className="inline-flex items-center gap-1">
+                <FlameIcon className="text-[color:var(--amber-500)]" size={14} aria-hidden />
+                {profile.streak}-day streak
+              </span>
+            </>
           )}
         </p>
       </motion.section>
 
-      {/* Farm health bar (gamification) */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -127,43 +90,22 @@ export default function HomePage() {
         </p>
       </motion.div>
 
-      {/* Talk to your agents */}
       <motion.section
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.5 }}
-        className="flex flex-col gap-3"
-      >
-        <div className="flex items-baseline justify-between">
-          <p className="sec !mb-0 flex items-center gap-1"><MessageCircleIcon size={12} aria-hidden /> Talk to an agent</p>
-          <Link href="/agents" className="text-xs text-[color:var(--green-700)] font-semibold flex items-center gap-1">
-            See all <ArrowRightIcon size={12} aria-hidden />
-          </Link>
-        </div>
-        <AgentDock
-          agents={agentBadges}
-          activeId={profile.agent_preference}
-          onSelect={(id) => router.push(`/agents/${id}`)}
-        />
-      </motion.section>
-
-      {/* Quick stats grid */}
-      <motion.section
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15, duration: 0.5 }}
         className="grid grid-cols-2 gap-3"
       >
         <StatWidget
           icon={ClipboardListIcon}
           label="Today's plan"
-          value={profile.completed_dates.includes(new Date().toISOString().slice(0, 10)) ? "On track" : "Open"}
-          tone={profile.completed_dates.includes(new Date().toISOString().slice(0, 10)) ? "green" : "amber"}
+          value={completedToday ? "On track" : "Open"}
+          tone={completedToday ? "green" : "amber"}
           onClick={() => router.push("/todos")}
         />
         <StatWidget
           icon={CalendarDaysIcon}
-          label="Events this week"
+          label="This week"
           value={weekEvents(profile.events)}
           unit="events"
           tone="neutral"
@@ -186,16 +128,17 @@ export default function HomePage() {
         />
       </motion.section>
 
-      {/* Live sensor mini-strip */}
       {profile.has_sensors && (
         <motion.section
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          transition={{ delay: 0.15, duration: 0.5 }}
           className="card flex flex-col gap-3"
         >
           <div className="flex items-baseline justify-between">
-            <p className="sec !mb-0 flex items-center gap-1"><DropletIcon size={12} aria-hidden /> Live from the farm</p>
+            <p className="sec !mb-0 flex items-center gap-1">
+              <DropletIcon size={12} aria-hidden /> Live from the farm
+            </p>
             <Link href="/sensors" className="text-xs text-[color:var(--green-700)] font-semibold flex items-center gap-1">
               Full panel <ArrowRightIcon size={12} aria-hidden />
             </Link>
@@ -217,11 +160,10 @@ export default function HomePage() {
         </motion.section>
       )}
 
-      {/* Learn CTA */}
       <motion.section
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25, duration: 0.5 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
       >
         <Link
           href="/learn"
@@ -233,7 +175,7 @@ export default function HomePage() {
           <div className="flex-1 min-w-0">
             <p className="font-semibold">Continue the course</p>
             <p className="text-xs text-[color:var(--muted)] truncate">
-              {profile.lesson_done.length}/8 lessons · {profile.quiz_done.length}/6 quizzes
+              {profile.lesson_done.length}/8 lessons · {profile.quiz_done.length} quizzes
             </p>
           </div>
           <ArrowRightIcon size={16} className="text-[color:var(--muted)]" aria-hidden />

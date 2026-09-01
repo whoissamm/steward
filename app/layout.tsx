@@ -3,7 +3,7 @@ import "./globals.css"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { ThemeSync } from "@/components/layout/ThemeSync"
 import { PwaRegister } from "@/components/layout/PwaRegister"
-import { ChatFab } from "@/components/layout/ChatFab"
+import { AgentMessageDock } from "@/components/layout/AgentMessageDock"
 import { VerdantSwirl, FilmGrain } from "@/components/ui/verdant-swirl"
 
 export const metadata: Metadata = {
@@ -56,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeSync />
         <PwaRegister />
         {children}
-        <ChatFab />
+        <AgentMessageDock />
         <BottomNav />
       </body>
     </html>
