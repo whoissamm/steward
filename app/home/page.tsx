@@ -30,7 +30,6 @@ import { levelFor, nextLevel, BADGES } from "@/lib/gamification"
 import { AgentDock, type AgentBadge } from "@/components/ui/agent-dock"
 import { StatWidget } from "@/components/ui/stat-widget"
 import { HealthBar } from "@/components/ui/health-bar"
-import { VerdantSwirl } from "@/components/ui/verdant-swirl"
 import { ShimmerLoader } from "@/components/ui/shimmer-loader"
 
 const AGENT_ICONS: Record<string, typeof SproutIcon> = {
@@ -97,8 +96,6 @@ export default function HomePage() {
 
   return (
     <main className="screen">
-      <VerdantSwirl />
-
       {/* Cinematic welcome hero */}
       <motion.section
         initial={{ opacity: 0, y: 8 }}

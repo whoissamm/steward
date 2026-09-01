@@ -5,12 +5,13 @@ import { dialectify } from "@/lib/dialect"
 export const runtime = "nodejs"
 export const maxDuration = 30
 
-type Body = { text: string; accent?: string }
+type Body = { text: string; accent?: string; gender?: "male" | "female" }
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as Body
   const text = (body.text ?? "").toString().trim()
   const accent = body.accent ?? "standard"
+  const gender = body.gender === "female" ? "female" : "male"
   if (!text) return NextResponse.json({ error: "text is required" }, { status: 400 })
 
   // Dialectify BEFORE ElevenLabs so the voice says "howay/aye/etc." with matching cadence.
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const voice = voiceIdFor(accent)
+  const voice = voiceIdFor(accent, gender)
   const model = process.env.ELEVENLABS_MODEL || "eleven_turbo_v2_5"
 
   try {

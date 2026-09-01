@@ -12,12 +12,12 @@ const ITEMS = [
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ]
 
-const HIDE_ON: string[] = ["/", "/login", "/onboard"]
+const HIDE_ON: string[] = ["/", "/login", "/onboard", "/agents/"]
 
 export function BottomNav() {
   const pathname = usePathname()
   if (!pathname) return null
-  if (HIDE_ON.some((p) => pathname === p || pathname.startsWith(p + "/"))) return null
+  if (HIDE_ON.some((p) => pathname === p || pathname.startsWith(p + "/") || (p.endsWith("/") && pathname.startsWith(p)))) return null
 
   return (
     <Dock>

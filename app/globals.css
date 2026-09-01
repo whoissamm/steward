@@ -41,6 +41,8 @@ html {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Body is transparent so the ambient background layer behind it shows through */
+
 html.dark {
   --bg: #0f1a0f;
   --fg: #e8f5e9;
@@ -56,8 +58,10 @@ body {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background: transparent;
   color: var(--fg);
+  position: relative;
+  z-index: 1;
 }
 
 .screen {
@@ -69,6 +73,8 @@ body {
   max-width: 768px;
   margin: 0 auto;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .screen.no-nav { padding-bottom: 20px; }

@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { motion, useReducedMotion } from "framer-motion"
+import { motion } from "framer-motion"
 import { SproutIcon, ArrowRightIcon, ShieldCheckIcon, WifiOffIcon, MicIcon } from "lucide-react"
 import { loadLocalProfile, hasOnboarded } from "@/lib/profile"
-import { VerdantSwirl } from "@/components/ui/verdant-swirl"
 
 const FEATURES = [
   { Icon: MicIcon, text: "Voice-first — in your accent" },
@@ -16,7 +15,6 @@ const FEATURES = [
 
 export default function RootPage() {
   const router = useRouter()
-  const reduced = useReducedMotion()
   const [routing, setRouting] = useState<"loading" | "welcome">("loading")
 
   useEffect(() => {
@@ -33,42 +31,37 @@ export default function RootPage() {
   if (routing === "loading") {
     return (
       <main className="screen no-nav items-center justify-center">
-        <div className="w-16 h-16 rounded-full bg-[color:var(--green-700)] text-white flex items-center justify-center text-2xl font-bold">
-          S
+        <div className="w-14 h-14 rounded-2xl bg-[color:var(--green-700)] text-white flex items-center justify-center">
+          <SproutIcon size={26} aria-hidden />
         </div>
-        <p className="text-sm text-[color:var(--muted)]">Loading Steward…</p>
       </main>
     )
   }
 
   return (
-    <main className="screen no-nav items-center justify-center text-center min-h-[100dvh] relative overflow-hidden">
-      <VerdantSwirl />
+    <main className="screen no-nav" style={{ paddingTop: 40 }}>
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex flex-col items-center gap-3 pt-4"
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="flex items-center gap-3"
       >
-        <motion.div
-          initial={reduced ? { opacity: 0 } : { scale: 0.6, opacity: 0 }}
-          animate={reduced ? { opacity: 1 } : { scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 220, damping: 18, delay: 0.15 }}
-          className="w-20 h-20 rounded-3xl bg-[color:var(--green-700)] text-white flex items-center justify-center shadow-2xl"
-          style={{ boxShadow: "0 12px 40px color-mix(in oklab, var(--green-600) 40%, transparent)" }}
+        <div
+          className="w-11 h-11 rounded-2xl bg-[color:var(--green-700)] text-white flex items-center justify-center"
+          style={{ boxShadow: "0 6px 18px color-mix(in oklab, var(--green-600) 30%, transparent)" }}
         >
-          <SproutIcon size={40} aria-hidden />
-        </motion.div>
-        <p className="text-xs font-bold uppercase tracking-[0.3em] text-[color:var(--green-700)]">
+          <SproutIcon size={22} aria-hidden />
+        </div>
+        <span className="text-xs font-bold uppercase tracking-[0.3em] text-[color:var(--green-700)]">
           Steward
-        </p>
+        </span>
       </motion.div>
 
       <motion.h1
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35, duration: 0.6 }}
-        className="text-4xl md:text-5xl font-bold leading-tight max-w-lg"
+        transition={{ delay: 0.15, duration: 0.55 }}
+        className="text-3xl md:text-4xl font-bold leading-tight max-w-lg mt-4"
       >
         Your farm&apos;s
         <br />
@@ -78,29 +71,28 @@ export default function RootPage() {
       <motion.p
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.6 }}
-        className="text-[color:var(--muted)] max-w-md text-lg leading-relaxed"
+        transition={{ delay: 0.3, duration: 0.55 }}
+        className="text-[color:var(--muted)] max-w-md leading-relaxed"
       >
-        Voice-first advice on soil, weather, schemes and stock — in plain English,
-        cited to sources you can trust.
+        Voice-first advice on soil, weather, schemes and stock — in plain English, cited to sources you can trust.
       </motion.p>
 
       <motion.ul
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.7, duration: 0.8, staggerChildren: 0.15 }}
-        className="flex flex-col gap-3 items-center"
+        transition={{ delay: 0.45, duration: 0.6 }}
+        className="flex flex-col gap-2 mt-2"
       >
         {FEATURES.map(({ Icon, text }, i) => (
           <motion.li
             key={text}
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.7 + i * 0.12, duration: 0.5 }}
-            className="flex items-center gap-2 text-sm text-[color:var(--fg)]"
+            transition={{ delay: 0.5 + i * 0.08, duration: 0.4 }}
+            className="flex items-center gap-2 text-sm"
           >
-            <span className="w-8 h-8 rounded-full bg-[color:var(--amber-100)] text-[color:var(--amber-700)] flex items-center justify-center flex-shrink-0">
-              <Icon size={16} aria-hidden />
+            <span className="w-7 h-7 rounded-full bg-[color:var(--amber-100)] text-[color:var(--amber-700)] flex items-center justify-center flex-shrink-0">
+              <Icon size={14} aria-hidden />
             </span>
             <span>{text}</span>
           </motion.li>
@@ -108,12 +100,12 @@ export default function RootPage() {
       </motion.ul>
 
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.1, duration: 0.6 }}
-        className="flex flex-col items-center gap-3 pt-4 w-full max-w-sm"
+        transition={{ delay: 0.8, duration: 0.5 }}
+        className="mt-6 flex flex-col gap-2 items-start"
       >
-        <Link href="/login" className="btn-primary w-full text-base">
+        <Link href="/login" className="btn-primary">
           Get started <ArrowRightIcon size={18} aria-hidden />
         </Link>
         <p className="text-xs text-[color:var(--muted)]">
@@ -121,15 +113,10 @@ export default function RootPage() {
         </p>
       </motion.div>
 
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.6, duration: 0.6 }}
-        className="text-[10px] text-[color:var(--muted)] max-w-sm mt-8"
-      >
+      <p className="text-[10px] text-[color:var(--muted)] max-w-md mt-10">
         Steward is a decision aid, not a licensed adviser. For regulated matters (vet, pesticide,
         disposal), we point you to a qualified professional.
-      </motion.p>
+      </p>
     </main>
   )
 }

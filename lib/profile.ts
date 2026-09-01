@@ -32,6 +32,7 @@ export type ProfileV2 = Profile & {
   profit_entries: ProfitEntry[]
   activity_log: ActivityLogEntry[]
   agent_preference: string
+  voice_gender: "male" | "female"
   onboarded_at?: string
 }
 
@@ -55,6 +56,7 @@ export const DEFAULT_PROFILE: ProfileV2 = {
   profit_entries: [],
   activity_log: [],
   agent_preference: "steward",
+  voice_gender: "male",
 }
 
 export function loadLocalProfile(): ProfileV2 | null {
@@ -162,6 +164,28 @@ export function behaviourSummary(p: ProfileV2): string {
     parts.push("recent activity: " + topKinds.map(([k, n]) => `${k}(${n})`).join(", "))
   }
   return parts.join("; ")
+}
+
+/** Compact snapshot of the farmer's current state to feed Gemini as context. */
+export function profileContextSummary(p: ProfileV2): string {
+  const t = todayIso()
+  const in7 = new Date()
+  in7.setDate(in7.getDate() + 7)
+  const in7Iso = `${in7.getFullYear()}-${String(in7.getMonth() + 1).padStart(2, "0")}-${String(in7.getDate()).padStart(2, "0")}`
+  const upcoming = p.events
+    .filter((e) => e.date >= t && e.date <= in7Iso)
+    .sort((a, b) => (a.date < b.date ? -1 : 1))
+    .slice(0, 8)
+    .map((e) => `${e.date}: ${e.title}`)
+  const parts: string[] = []
+  parts.push(`Today is ${t}. Farmer is ${p.name || "unnamed"}, ${p.farm_type} farm${p.has_sensors ? ", sensors connected" : ""}.`)
+  parts.push(`Level ${p.points >= 100 ? "Master Steward" : p.points >= 50 ? "Steward" : p.points >= 20 ? "Grower" : "Seedling"}, ${p.points} pts, ${p.streak}-day activity streak, ${p.badges.length} badges.`)
+  if (upcoming.length > 0) {
+    parts.push(`Upcoming events: ${upcoming.join(" · ")}.`)
+  } else {
+    parts.push("No events currently in the calendar.")
+  }
+  return parts.join(" ")
 }
 
 // -------- profit helpers --------

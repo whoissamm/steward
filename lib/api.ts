@@ -36,7 +36,14 @@ export type AskResponse = {
   level: string
   agent?: string
   llm?: "gemini" | "offline_tfidf" | "guardrail"
+  actions?: AgentAction[]
 }
+
+export type AgentAction =
+  | { kind: "add_event"; date: string; title: string; category?: "todo" | "advisory" | "weather" | "scheme" }
+  | { kind: "add_todo"; text: string; category?: "weather" | "livestock" | "soil" | "grants" | "records" | "general" }
+  | { kind: "mark_todo_done"; id_or_text: string }
+  | { kind: "log_note"; text: string }
 
 export type PlanTodo = { id: string; text: string; done: boolean }
 export type PlanResponse = { todos: PlanTodo[]; reminders: string[]; season: string }
@@ -94,7 +101,13 @@ export const api = {
   async ask(
     text: string,
     profile?: Profile,
-    opts?: { agentId?: string; behaviourSummary?: string },
+    opts?: {
+      agentId?: string
+      behaviourSummary?: string
+      profileContext?: string
+      imageBase64?: string
+      imageMime?: string
+    },
   ): Promise<AskResponse> {
     const slim = profile
       ? {
@@ -112,6 +125,9 @@ export const api = {
         profile: slim,
         agent_id: opts?.agentId,
         behaviour_summary: opts?.behaviourSummary,
+        profile_context: opts?.profileContext,
+        image_base64: opts?.imageBase64,
+        image_mime: opts?.imageMime,
       }),
     })
   },

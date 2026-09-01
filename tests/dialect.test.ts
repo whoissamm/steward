@@ -35,10 +35,12 @@ describe("dialectify", () => {
     expect(dialectify("Hello there", "standard")).toBe("Hello there")
   })
 
-  it("adds a Geordie lead and tag", () => {
-    const out = dialectify("Yes, we should check the field", "geordie")
-    expect(out.startsWith("Howay,")).toBe(true)
-    expect(out).toContain("Mind how ye gan")
+  it("only adds the Geordie lead and tag when includeLead:true (default is subtle)", () => {
+    const subtle = dialectify("Yes, we should check the field", "geordie")
+    expect(subtle.startsWith("Howay,")).toBe(false)
+    const preview = dialectify("Yes, we should check the field", "geordie", { includeLead: true })
+    expect(preview.startsWith("Howay,")).toBe(true)
+    expect(preview).toContain("Mind how ye gan")
   })
 
   it("drops 'g' from -ing when accent uses ing-drop", () => {

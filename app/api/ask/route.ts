@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { checkGuards, normaliseDialect } from "@/lib/server/guardrails"
-import { askInternal } from "@/lib/server/reasoning"
+import { askInternal, type AgentAction } from "@/lib/server/reasoning"
 import { getReadings, sensorContextForQuestion } from "@/lib/server/sensors"
 import { checkBadges, levelFor, tipForTurn } from "@/lib/server/gamification"
 import { isMarketQuery } from "@/lib/server/topics"
@@ -12,6 +12,9 @@ type AskBody = {
   text: string
   agent_id?: string
   behaviour_summary?: string
+  profile_context?: string
+  image_base64?: string
+  image_mime?: string
   profile?: {
     id?: string
     points?: number
@@ -26,11 +29,14 @@ export async function POST(req: NextRequest) {
   const text = (body.text ?? "").toString().trim()
   const agentId = body.agent_id || "steward"
   const behaviourSummary = body.behaviour_summary
+  const profileContext = body.profile_context
+  const imageBase64 = body.image_base64
+  const imageMime = body.image_mime
   const profile = body.profile ?? {}
   const currentBadges = new Set(profile.badges ?? [])
 
-  if (!text) {
-    return NextResponse.json({ error: "text is required" }, { status: 400 })
+  if (!text && !imageBase64) {
+    return NextResponse.json({ error: "text or image is required" }, { status: 400 })
   }
 
   const normalised = normaliseDialect(text)
@@ -63,6 +69,7 @@ export async function POST(req: NextRequest) {
       level: levelFor(profile.points ?? 0),
       agent: agentId,
       llm: "guardrail",
+      actions: [] as AgentAction[],
     })
   }
 
@@ -74,10 +81,13 @@ export async function POST(req: NextRequest) {
     if (sensorContext) sensorUsed = true
   }
 
-  const result = await askInternal(normalised, {
+  const result = await askInternal(text || "See attached image and advise.", {
     agentId,
     sensorContext,
     behaviourSummary,
+    profileContext,
+    imageBase64,
+    imageMime,
   })
 
   const pointsEarned = 5
@@ -111,5 +121,6 @@ export async function POST(req: NextRequest) {
     level: levelFor(nextPoints),
     agent: result.agent,
     llm: result.llm,
+    actions: result.actions,
   })
 }

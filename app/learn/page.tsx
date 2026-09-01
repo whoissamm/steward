@@ -8,12 +8,12 @@ import { useProfile } from "@/hooks/useProfile"
 import { api } from "@/lib/api"
 import { hasOnboarded } from "@/lib/profile"
 import { COURSE, ALL_LESSONS, ALL_QUIZ_IDS, type Lesson } from "@/lib/course"
-import { ExpandableCard } from "@/components/ui/expandable-card"
+import { FolderCard } from "@/components/ui/folder-card"
 import { Quiz } from "@/components/learn/Quiz"
 import { ProgressCard } from "@/components/ui/progress-card"
 import { AchievementUnlocked } from "@/components/ui/achievement-unlocked"
 import { BADGES } from "@/lib/gamification"
-import { AwardIcon, BookOpenIcon, CheckIcon, ClockIcon, GraduationCapIcon } from "lucide-react"
+import { AwardIcon, CheckIcon, GraduationCapIcon } from "lucide-react"
 
 export default function LearnPage() {
   const router = useRouter()
@@ -127,27 +127,13 @@ export default function LearnPage() {
             {mod.lessons.map((l) => {
               const done = profile.lesson_done.includes(l.id)
               return (
-                <ExpandableCard
+                <FolderCard
                   key={l.id}
                   title={l.title}
-                  subtitle={l.duration}
+                  duration={l.duration}
                   eyebrow={done ? "Completed" : "Lesson"}
-                  icon={
-                    done ? (
-                      <span className="w-8 h-8 rounded-full bg-[color:var(--green-700)] text-white flex items-center justify-center">
-                        <CheckIcon size={16} aria-hidden />
-                      </span>
-                    ) : (
-                      <span className="w-8 h-8 rounded-full bg-[color:var(--surface-alt)] text-[color:var(--muted)] flex items-center justify-center">
-                        <BookOpenIcon size={16} aria-hidden />
-                      </span>
-                    )
-                  }
-                  rightSlot={
-                    <span className="text-[10px] text-[color:var(--muted)] flex items-center gap-1">
-                      <ClockIcon size={10} aria-hidden />{l.duration}
-                    </span>
-                  }
+                  done={done}
+                  color={mi === 0 ? "var(--amber-400)" : mi === 1 ? "var(--green-500)" : "var(--stone-400)"}
                 >
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-3 text-sm leading-relaxed text-[color:var(--fg)]">
@@ -187,7 +173,7 @@ export default function LearnPage() {
                       </button>
                     )}
                   </div>
-                </ExpandableCard>
+                </FolderCard>
               )
             })}
           </motion.section>

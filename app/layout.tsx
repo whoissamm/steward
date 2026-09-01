@@ -3,6 +3,8 @@ import "./globals.css"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { ThemeSync } from "@/components/layout/ThemeSync"
 import { PwaRegister } from "@/components/layout/PwaRegister"
+import { ChatFab } from "@/components/layout/ChatFab"
+import { VerdantSwirl, FilmGrain } from "@/components/ui/verdant-swirl"
 
 export const metadata: Metadata = {
   title: "Steward — AI advisor for small farms",
@@ -49,9 +51,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <link rel="mask-icon" href="/icons/icon.svg" color="#15803d" />
       </head>
       <body className="min-h-full flex flex-col">
+        <VerdantSwirl />
+        <FilmGrain />
         <ThemeSync />
         <PwaRegister />
         {children}
+        <ChatFab />
         <BottomNav />
       </body>
     </html>

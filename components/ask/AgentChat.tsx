@@ -1,16 +1,16 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { api, type AskResponse } from "@/lib/api"
+import { api, type AskResponse, type AgentAction } from "@/lib/api"
 import { useProfile } from "@/hooks/useProfile"
 import { useAudio } from "@/hooks/useAudio"
-import { behaviourSummary } from "@/lib/profile"
+import { behaviourSummary, profileContextSummary, type CalendarEvent } from "@/lib/profile"
 import { AnswerBubble, UserBubble } from "@/components/ask/ChatBubble"
 import { TypingIndicator } from "@/components/ask/TypingIndicator"
 import { AiPromptBox } from "@/components/ui/ai-prompt-box"
 import { AchievementUnlocked } from "@/components/ui/achievement-unlocked"
 import { BADGES } from "@/lib/gamification"
-import { AwardIcon, XIcon } from "lucide-react"
+import { AwardIcon, CalendarPlusIcon, CheckCircle2Icon, ListPlusIcon, StickyNoteIcon, XIcon } from "lucide-react"
 
 export type AgentChatProps = {
   agentId: string
@@ -21,13 +21,35 @@ export type AgentChatProps = {
   initialQuestion?: string
 }
 
-type Turn = { id: string; question: string; response?: AskResponse; error?: string }
+type Turn = {
+  id: string
+  question: string
+  imagePreview?: string
+  response?: AskResponse
+  error?: string
+  appliedActions?: AgentAction[]
+}
+
+async function fileToBase64(file: File): Promise<{ data: string; mime: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      const [meta, data] = result.split(",")
+      const mimeMatch = meta.match(/data:([^;]+)/)
+      resolve({ data, mime: mimeMatch?.[1] || file.type || "image/jpeg" })
+    }
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
 
 export function AgentChat({ agentId, agentName, agentColor, greeting, suggestions, initialQuestion }: AgentChatProps) {
   const { profile, update, logActivity, markCompletion } = useProfile()
-  const { listening, listen, stop, speak, error: voiceError, clearError, audioLevel } = useAudio(
+  const { listening, listen, stop, speak, stopSpeaking, error: voiceError, clearError, audioLevel } = useAudio(
     profile.accent,
     profile.read_aloud,
+    profile.voice_gender ?? "male",
   )
   const [turns, setTurns] = useState<Turn[]>([])
   const [pending, setPending] = useState(false)
@@ -38,34 +60,106 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
   const nextId = () => `t${++idRef.current}`
   void audioLevel
 
+  const applyActions = useCallback(
+    (actions: AgentAction[]): AgentAction[] => {
+      if (!actions || actions.length === 0) return []
+      const applied: AgentAction[] = []
+      const nextEvents: CalendarEvent[] = [...profile.events]
+      let nextCompletedDates = profile.completed_dates
+      for (const a of actions) {
+        if (a.kind === "add_event") {
+          nextEvents.push({
+            id: `e-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            date: a.date,
+            title: a.title,
+            kind: a.category ?? "todo",
+          })
+          applied.push(a)
+        } else if (a.kind === "add_todo") {
+          // Todos live in `events` too (as `todo` kind) — dated today
+          const today = new Date()
+          const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+          nextEvents.push({
+            id: `t-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            date: iso,
+            title: a.text,
+            kind: "todo",
+          })
+          applied.push(a)
+        } else if (a.kind === "log_note") {
+          logActivity(`note`, { text: a.text })
+          applied.push(a)
+        } else if (a.kind === "mark_todo_done") {
+          const iso = new Date().toISOString().slice(0, 10)
+          if (!nextCompletedDates.includes(iso)) nextCompletedDates = [...nextCompletedDates, iso].sort()
+          applied.push(a)
+        }
+      }
+      if (nextEvents.length !== profile.events.length || nextCompletedDates !== profile.completed_dates) {
+        update({ events: nextEvents, completed_dates: nextCompletedDates })
+      }
+      return applied
+    },
+    [profile, update, logActivity],
+  )
+
   const ask = useCallback(
-    async (question: string) => {
+    async (question: string, image?: File) => {
       const trimmed = question.trim()
-      if (!trimmed || pending) return
+      if ((!trimmed && !image) || pending) return
       const id = nextId()
-      setTurns((t) => [...t, { id, question: trimmed }])
+      let imagePayload: { data: string; mime: string } | null = null
+      let imagePreview: string | undefined
+      if (image) {
+        try {
+          imagePayload = await fileToBase64(image)
+          imagePreview = `data:${imagePayload.mime};base64,${imagePayload.data}`
+        } catch {
+          // ignore preview failure
+        }
+      }
+      const summary = behaviourSummary(profile)
+      const context = profileContextSummary(profile)
+      setTurns((t) => [...t, { id, question: trimmed || "(image only)", imagePreview }])
       setPending(true)
       logActivity(`ask:${agentId}`, { question: trimmed })
       markCompletion()
       try {
-        const summary = behaviourSummary(profile)
-        const response = await api.ask(trimmed, {
-          ...profile,
-          points: profile.points,
-          turns: profile.turns,
-          badges: profile.badges,
-          has_sensors: profile.has_sensors,
-        }, { agentId, behaviourSummary: summary })
-        setTurns((t) => t.map((x) => (x.id === id ? { ...x, response } : x)))
+        const response = await api.ask(
+          trimmed || "See the attached photo and advise.",
+          {
+            id: profile.id,
+            name: profile.name,
+            accent: profile.accent,
+            farm_type: profile.farm_type,
+            has_sensors: profile.has_sensors,
+            read_aloud: profile.read_aloud,
+            dark_mode: profile.dark_mode,
+            large_text: profile.large_text,
+            points: profile.points,
+            turns: profile.turns,
+            streak: profile.streak,
+            badges: profile.badges,
+            lesson_done: profile.lesson_done,
+            quiz_done: profile.quiz_done,
+          },
+          {
+            agentId,
+            behaviourSummary: summary,
+            profileContext: context,
+            imageBase64: imagePayload?.data,
+            imageMime: imagePayload?.mime,
+          },
+        )
+        const applied = applyActions(response.actions ?? [])
+        setTurns((t) => t.map((x) => (x.id === id ? { ...x, response, appliedActions: applied } : x)))
         update({
           points: response.total_points,
           turns: profile.turns + 1,
           badges: Array.from(new Set([...profile.badges, ...response.new_badges])),
           agent_preference: agentId,
         })
-        if (response.new_badges.length > 0) {
-          setUnlocked(response.new_badges[0])
-        }
+        if (response.new_badges.length > 0) setUnlocked(response.new_badges[0])
         if (profile.read_aloud && !response.is_crisis && !response.blocked) {
           speak(response.answer)
         }
@@ -81,7 +175,7 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
         setPending(false)
       }
     },
-    [pending, profile, speak, update, logActivity, markCompletion, agentId],
+    [pending, profile, speak, update, logActivity, markCompletion, agentId, applyActions],
   )
 
   useEffect(() => {
@@ -95,14 +189,13 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
   }, [turns, pending])
 
   const latestId = turns[turns.length - 1]?.id
-
   const badgeMeta = unlocked ? BADGES[unlocked] : null
 
   return (
     <>
       <div
         ref={scrollRef}
-        className="flex-1 flex flex-col gap-3 overflow-y-auto pb-32"
+        className="flex-1 flex flex-col gap-3 overflow-y-auto pb-40"
       >
         {turns.length === 0 && (
           <section className="card flex flex-col gap-3" style={{ borderColor: agentColor }}>
@@ -116,8 +209,8 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
             </div>
             <p className="text-[color:var(--muted)] text-sm leading-relaxed">{greeting}</p>
             <p className="text-xs text-[color:var(--muted)] italic">
-              Answers are grounded in GOV.UK, AHDB and Met Office sources. Regulated advice
-              (vet dosing, spray rates) is redirected to a licensed professional.
+              I can also read your calendar, add tasks, and remember what we&apos;ve done together.
+              Try: &ldquo;What&apos;s on today?&rdquo; or &ldquo;Add a soil test to next Monday&rdquo;.
             </p>
           </section>
         )}
@@ -130,6 +223,11 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
               aria-live={isLatest ? "polite" : undefined}
               aria-atomic={isLatest ? true : undefined}
             >
+              {t.imagePreview && (
+                <div className="self-end max-w-[70%] rounded-2xl overflow-hidden border border-[color:var(--border)]">
+                  <img src={t.imagePreview} alt="Attached" className="w-full h-auto" />
+                </div>
+              )}
               <UserBubble text={t.question} />
               {t.error && (
                 <div className="bubble crisis" role="alert">
@@ -144,11 +242,20 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
                 </div>
               )}
               {t.response && (
-                <AnswerBubble
-                  response={t.response}
-                  onSpeak={() => speak(t.response!.answer)}
-                  onFollowup={(q) => ask(q)}
-                />
+                <>
+                  <AnswerBubble
+                    response={t.response}
+                    onSpeak={() => speak(t.response!.answer)}
+                    onFollowup={(q) => ask(q)}
+                  />
+                  {t.appliedActions && t.appliedActions.length > 0 && (
+                    <div className="flex flex-col gap-1.5 ml-3">
+                      {t.appliedActions.map((a, i) => (
+                        <AppliedActionRow key={i} action={a} />
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )
@@ -174,23 +281,25 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
       )}
 
       <div
-        className="fixed left-0 right-0 bottom-24 px-3 z-40"
-        style={{ paddingBottom: 0 }}
+        className="fixed left-0 right-0 z-30 pointer-events-none px-3"
+        style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + 12px)` }}
       >
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl pointer-events-auto">
           <AiPromptBox
-            onSubmit={ask}
+            onSubmit={(text, file) => ask(text, file)}
             placeholder={`Ask ${agentName}…`}
             disabled={pending}
             suggestions={turns.length === 0 ? suggestions : undefined}
             listening={listening}
             onVoice={() => {
               if (listening) stop()
-              else
+              else {
+                stopSpeaking()
                 listen((text) => {
                   ask(text)
                   api.progress("voice_used", undefined, profile).catch(() => {})
                 })
+              }
             }}
           />
         </div>
@@ -206,5 +315,28 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
         />
       )}
     </>
+  )
+}
+
+function AppliedActionRow({ action }: { action: AgentAction }) {
+  let Icon = CheckCircle2Icon
+  let label = ""
+  if (action.kind === "add_event") {
+    Icon = CalendarPlusIcon
+    label = `Added to calendar: ${action.title} on ${action.date}`
+  } else if (action.kind === "add_todo") {
+    Icon = ListPlusIcon
+    label = `Added to today's list: ${action.text}`
+  } else if (action.kind === "mark_todo_done") {
+    Icon = CheckCircle2Icon
+    label = `Marked done: ${action.id_or_text}`
+  } else if (action.kind === "log_note") {
+    Icon = StickyNoteIcon
+    label = `Noted: ${action.text}`
+  }
+  return (
+    <span className="chip chip-green flex items-center gap-1 self-start">
+      <Icon size={12} aria-hidden /> {label}
+    </span>
   )
 }

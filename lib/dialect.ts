@@ -104,7 +104,14 @@ const DIALECT_VOICE: Record<string, DialectVoice> = {
   },
 }
 
-export function dialectify(text: string, accent: string): string {
+/**
+ * Apply subtle dialect flavour to spoken output — word substitutions + ing-drop.
+ * The "lead" phrase (Howay/Aye/Wey aye) and closing tag are NOT applied here by
+ * default — the ElevenLabs voice + word swaps already carry the regional feel,
+ * and prepending "Howay," to every single reply gets old fast.
+ * Pass { includeLead: true } explicitly (e.g. for greeting previews).
+ */
+export function dialectify(text: string, accent: string, opts: { includeLead?: boolean } = {}): string {
   const d = DIALECT_VOICE[accent] ?? DIALECT_VOICE.standard
   let result = text.replace(/[A-Za-z']+/g, (w) => {
     const low = w.toLowerCase()
@@ -113,7 +120,9 @@ export function dialectify(text: string, accent: string): string {
     return w[0] === w[0].toUpperCase() ? repl[0].toUpperCase() + repl.slice(1) : repl
   })
   if (d.ing) result = result.replace(/([a-z]{2,})ing\b/g, "$1in'")
-  if (d.lead && result) result = d.lead + result[0].toLowerCase() + result.slice(1)
-  if (d.tag) result = result.trimEnd() + d.tag
+  if (opts.includeLead && d.lead && result) {
+    result = d.lead + result[0].toLowerCase() + result.slice(1)
+    if (d.tag) result = result.trimEnd() + d.tag
+  }
   return result
 }

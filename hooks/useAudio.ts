@@ -30,8 +30,9 @@ export function isVoiceSupported(): boolean {
   return !!(win.SpeechRecognition || win.webkitSpeechRecognition)
 }
 
-export function useAudio(accent: string, readAloud: boolean) {
+export function useAudio(accent: string, readAloud: boolean, gender: "male" | "female" = "male") {
   const [listening, setListening] = useState(false)
+  const [speaking, setSpeaking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [audioLevel, setAudioLevel] = useState(0)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
@@ -39,6 +40,9 @@ export function useAudio(accent: string, readAloud: boolean) {
   const rafRef = useRef<number | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null)
+  const currentUrlRef = useRef<string | null>(null)
+  const speakSeqRef = useRef(0)
 
   const cleanupStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
@@ -54,7 +58,36 @@ export function useAudio(accent: string, readAloud: boolean) {
     recognitionRef.current = null
   }, [])
 
-  useEffect(() => () => cleanupStream(), [cleanupStream])
+  const stopSpeaking = useCallback(() => {
+    // Stop ElevenLabs audio
+    if (currentAudioRef.current) {
+      try {
+        currentAudioRef.current.pause()
+        currentAudioRef.current.src = ""
+      } catch {
+        // ignore
+      }
+      currentAudioRef.current = null
+    }
+    if (currentUrlRef.current) {
+      URL.revokeObjectURL(currentUrlRef.current)
+      currentUrlRef.current = null
+    }
+    // Stop browser TTS
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel()
+      } catch {
+        // ignore
+      }
+    }
+    setSpeaking(false)
+  }, [])
+
+  useEffect(() => () => {
+    cleanupStream()
+    stopSpeaking()
+  }, [cleanupStream, stopSpeaking])
 
   const startWaveform = useCallback((stream: MediaStream) => {
     const win = window as unknown as { webkitAudioContext?: typeof AudioContext }
@@ -137,23 +170,40 @@ export function useAudio(accent: string, readAloud: boolean) {
   const speak = useCallback(
     async (text: string) => {
       if (!readAloud || typeof window === "undefined") return
+      // Always cancel anything currently speaking before starting a new one
+      stopSpeaking()
+      const seq = ++speakSeqRef.current
       try {
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, accent }),
+          body: JSON.stringify({ text, accent, gender }),
         })
+        // If a newer speak() has been requested since we started, bail out
+        if (seq !== speakSeqRef.current) return
         const ctype = res.headers.get("content-type") || ""
         if (res.ok && ctype.includes("audio/")) {
           const blob = await res.blob()
+          if (seq !== speakSeqRef.current) return
           const url = URL.createObjectURL(blob)
+          currentUrlRef.current = url
           const audio = new Audio(url)
-          audio.onended = () => URL.revokeObjectURL(url)
-          audio.onerror = () => URL.revokeObjectURL(url)
+          currentAudioRef.current = audio
+          setSpeaking(true)
+          const cleanup = () => {
+            if (currentUrlRef.current === url) {
+              URL.revokeObjectURL(url)
+              currentUrlRef.current = null
+            }
+            if (currentAudioRef.current === audio) currentAudioRef.current = null
+            setSpeaking(false)
+          }
+          audio.onended = cleanup
+          audio.onerror = cleanup
           try {
             await audio.play()
           } catch (e) {
-            URL.revokeObjectURL(url)
+            cleanup()
             setError(`Playback blocked: ${(e as Error).message}. Tap the speaker button to enable audio.`)
           }
           return
@@ -161,20 +211,24 @@ export function useAudio(accent: string, readAloud: boolean) {
         // JSON fallback = browser TTS with dialectified text
         const data = (await res.json().catch(() => null)) as { dialect_text?: string } | null
         if (!("speechSynthesis" in window)) return
+        if (seq !== speakSeqRef.current) return
         const utter = new SpeechSynthesisUtterance(data?.dialect_text || dialectify(text, accent))
         utter.lang = "en-GB"
         utter.rate = 1
         utter.pitch = 1
+        setSpeaking(true)
+        utter.onend = () => setSpeaking(false)
+        utter.onerror = () => setSpeaking(false)
         window.speechSynthesis.cancel()
         window.speechSynthesis.speak(utter)
       } catch (e) {
         setError(`Could not read aloud: ${(e as Error).message}`)
       }
     },
-    [accent, readAloud],
+    [accent, readAloud, stopSpeaking],
   )
 
   const clearError = useCallback(() => setError(null), [])
 
-  return { listening, listen, stop, speak, error, clearError, audioLevel }
+  return { listening, speaking, listen, stop, speak, stopSpeaking, error, clearError, audioLevel }
 }

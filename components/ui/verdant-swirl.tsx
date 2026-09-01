@@ -3,52 +3,110 @@
 import { motion, useReducedMotion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
-export function VerdantSwirl({ className }: { className?: string }) {
+/**
+ * Ambient background: soft green + amber gradient blobs slowly drifting.
+ * Mounted at layout level. Not clickable, respects reduced motion.
+ * Uses `position: fixed; inset: 0` and lives beneath body via z-index: 0
+ * (body itself is transparent + z-index: 1 in globals.css).
+ */
+export function VerdantSwirl({ className, intensity = 1 }: { className?: string; intensity?: number }) {
   const reduced = useReducedMotion()
   return (
     <div
-      className={cn("fixed inset-0 -z-10 pointer-events-none overflow-hidden", className)}
+      className={cn(
+        "fixed inset-0 pointer-events-none overflow-hidden",
+        className,
+      )}
+      style={{ zIndex: 0 }}
       aria-hidden
     >
-      <motion.svg
-        viewBox="0 0 800 800"
-        width="120%"
-        height="120%"
-        className="absolute -top-16 -left-16 opacity-30"
-        animate={reduced ? undefined : { rotate: 360 }}
-        transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
-      >
-        <defs>
-          <radialGradient id="g1" cx="50%" cy="50%">
-            <stop offset="0%" stopColor="var(--green-500)" stopOpacity="0.6" />
-            <stop offset="60%" stopColor="var(--green-700)" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="var(--green-700)" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="g2" cx="50%" cy="50%">
-            <stop offset="0%" stopColor="var(--amber-400)" stopOpacity="0.55" />
-            <stop offset="70%" stopColor="var(--amber-500)" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="var(--amber-500)" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="g3" cx="50%" cy="50%">
-            <stop offset="0%" stopColor="var(--green-800)" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="var(--green-800)" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <circle cx="230" cy="180" r="260" fill="url(#g1)" />
-        <circle cx="580" cy="260" r="200" fill="url(#g2)" />
-        <circle cx="420" cy="560" r="300" fill="url(#g3)" />
-      </motion.svg>
-      <motion.svg
-        viewBox="0 0 800 800"
-        width="120%"
-        height="120%"
-        className="absolute -bottom-24 -right-24 opacity-25"
-        animate={reduced ? undefined : { rotate: -360 }}
-        transition={{ duration: 180, repeat: Infinity, ease: "linear" }}
-      >
-        <circle cx="400" cy="400" r="360" fill="url(#g1)" />
-        <circle cx="240" cy="620" r="200" fill="url(#g2)" />
-      </motion.svg>
+      {/* Base gradient wash — ensures visible warmth even before blobs animate */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at 20% 10%, color-mix(in oklab, var(--green-500) 12%, transparent) 0%, transparent 50%), " +
+            "radial-gradient(ellipse at 80% 90%, color-mix(in oklab, var(--amber-400) 12%, transparent) 0%, transparent 55%), " +
+            "radial-gradient(ellipse at 60% 40%, color-mix(in oklab, var(--green-700) 6%, transparent) 0%, transparent 45%)",
+          opacity: intensity,
+        }}
+      />
+
+      {/* Drifting blob 1 — green */}
+      <motion.div
+        className="absolute rounded-full"
+        style={{
+          top: "-10%",
+          left: "-10%",
+          width: "70vw",
+          height: "70vw",
+          maxWidth: 800,
+          maxHeight: 800,
+          background:
+            "radial-gradient(circle, color-mix(in oklab, var(--green-500) 40%, transparent) 0%, transparent 60%)",
+          filter: "blur(60px)",
+          opacity: 0.55 * intensity,
+        }}
+        animate={reduced ? undefined : { x: [0, 40, -20, 0], y: [0, 30, -30, 0] }}
+        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Drifting blob 2 — amber */}
+      <motion.div
+        className="absolute rounded-full"
+        style={{
+          bottom: "-15%",
+          right: "-10%",
+          width: "60vw",
+          height: "60vw",
+          maxWidth: 700,
+          maxHeight: 700,
+          background:
+            "radial-gradient(circle, color-mix(in oklab, var(--amber-400) 45%, transparent) 0%, transparent 60%)",
+          filter: "blur(70px)",
+          opacity: 0.5 * intensity,
+        }}
+        animate={reduced ? undefined : { x: [0, -30, 20, 0], y: [0, -40, 20, 0] }}
+        transition={{ duration: 40, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+      />
+
+      {/* Drifting blob 3 — deep green */}
+      <motion.div
+        className="absolute rounded-full"
+        style={{
+          top: "40%",
+          left: "50%",
+          width: "50vw",
+          height: "50vw",
+          maxWidth: 600,
+          maxHeight: 600,
+          background:
+            "radial-gradient(circle, color-mix(in oklab, var(--green-700) 30%, transparent) 0%, transparent 65%)",
+          filter: "blur(80px)",
+          opacity: 0.45 * intensity,
+          transform: "translate(-50%, -50%)",
+        }}
+        animate={reduced ? undefined : { scale: [1, 1.15, 0.95, 1] }}
+        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+      />
     </div>
+  )
+}
+
+/**
+ * Grain overlay — very subtle noise, gives the bg a cinematic film look.
+ */
+export function FilmGrain({ opacity = 0.04 }: { opacity?: number }) {
+  return (
+    <div
+      className="fixed inset-0 pointer-events-none mix-blend-overlay"
+      style={{
+        zIndex: 0,
+        opacity,
+        backgroundImage:
+          "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>\")",
+      }}
+      aria-hidden
+    />
   )
 }

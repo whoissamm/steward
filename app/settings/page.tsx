@@ -127,6 +127,32 @@ export default function SettingsPage() {
         </label>
 
         <label className="flex flex-col gap-2">
+          <span className="font-medium">Voice</span>
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Voice gender">
+            {(["male", "female"] as const).map((g) => {
+              const selected = (profile.voice_gender ?? "male") === g
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => update({ voice_gender: g })}
+                  className={
+                    "px-4 py-3 rounded-xl border-2 font-medium capitalize " +
+                    (selected
+                      ? "border-[color:var(--green-700)] bg-[color:color-mix(in_oklab,var(--green-500)_10%,var(--surface))] text-[color:var(--fg)]"
+                      : "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--muted)]")
+                  }
+                >
+                  {g}
+                </button>
+              )
+            })}
+          </div>
+        </label>
+
+        <label className="flex flex-col gap-2">
           <span className="font-medium">Farm type</span>
           <select
             className="input"
