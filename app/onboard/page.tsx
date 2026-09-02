@@ -64,8 +64,8 @@ export default function OnboardPage() {
   const meta = STEP_META[step - 1]
 
   return (
-    <main className="screen no-nav" style={{ paddingBottom: 100 }}>
-      {/* Top-anchored hero */}
+    <main className="screen no-nav centered">
+      {/* Header strip */}
       <div className="flex items-start justify-between gap-3 pt-2">
         <div className="flex items-center gap-3">
           <div
@@ -254,11 +254,8 @@ export default function OnboardPage() {
         </div>
       )}
 
-      {/* Sticky CTA */}
-      <div
-        className="sticky -mx-4 px-4 py-3 bg-[color:var(--bg)]/95 backdrop-blur-md border-t border-[color:var(--border)] flex items-center justify-between gap-3"
-        style={{ bottom: `env(safe-area-inset-bottom, 0px)` }}
-      >
+      {/* Inline CTA — sits under the step body since content is vertically centred */}
+      <div className="flex items-center justify-between gap-3 pt-2">
         <button
           type="button"
           className="btn-ghost"

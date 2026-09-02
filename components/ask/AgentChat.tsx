@@ -5,6 +5,7 @@ import { api, type AskResponse, type AgentAction } from "@/lib/api"
 import { useProfile } from "@/hooks/useProfile"
 import { useAudio } from "@/hooks/useAudio"
 import { behaviourSummary, profileContextSummary, type CalendarEvent } from "@/lib/profile"
+import { detectClientIntent } from "@/lib/intents"
 import { AnswerBubble, UserBubble } from "@/components/ask/ChatBubble"
 import { TypingIndicator } from "@/components/ask/TypingIndicator"
 import { AiPromptBox } from "@/components/ui/ai-prompt-box"
@@ -151,7 +152,12 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
             imageMime: imagePayload?.mime,
           },
         )
-        const applied = applyActions(response.actions ?? [])
+        // Server actions come first; if empty, try to salvage intent from the
+        // user's message (Gemini often agrees to do a thing but forgets to
+        // emit the <actions> tag).
+        const serverActions = response.actions ?? []
+        const fallbackActions = serverActions.length === 0 ? detectClientIntent(trimmed) : []
+        const applied = applyActions([...serverActions, ...fallbackActions])
         setTurns((t) => t.map((x) => (x.id === id ? { ...x, response, appliedActions: applied } : x)))
         update({
           points: response.total_points,
@@ -160,9 +166,15 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
           agent_preference: agentId,
         })
         if (response.new_badges.length > 0) setUnlocked(response.new_badges[0])
-        if (profile.read_aloud && !response.is_crisis && !response.blocked) {
-          speak(response.answer)
-        }
+        // Skip auto-TTS on action-only responses (chip conveys the detail;
+        // no one wants "I have added the dog vet appointment to your calendar
+        // for today, 2 September 2026" read aloud on every task).
+        const shouldSpeak =
+          profile.read_aloud &&
+          !response.is_crisis &&
+          !response.blocked &&
+          applied.length === 0
+        if (shouldSpeak) speak(response.answer)
       } catch (e) {
         setTurns((t) =>
           t.map((x) =>

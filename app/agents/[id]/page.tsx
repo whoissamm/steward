@@ -5,10 +5,11 @@ import Link from "next/link"
 import { useParams, useSearchParams } from "next/navigation"
 import {
   SproutIcon,
-  CloudRainIcon,
+  CloudSunRainIcon,
   LandmarkIcon,
   StethoscopeIcon,
-  ShoppingBasketIcon,
+  StoreIcon,
+  WheatIcon,
   ArrowLeftIcon,
   type LucideIcon,
 } from "lucide-react"
@@ -27,10 +28,11 @@ type ApiAgent = {
 
 const ICONS: Record<string, LucideIcon> = {
   sprout: SproutIcon,
-  "cloud-rain": CloudRainIcon,
+  "cloud-sun-rain": CloudSunRainIcon,
   landmark: LandmarkIcon,
+  wheat: WheatIcon,
   stethoscope: StethoscopeIcon,
-  "shopping-basket": ShoppingBasketIcon,
+  store: StoreIcon,
 }
 
 function AgentPageInner() {

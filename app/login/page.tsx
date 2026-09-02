@@ -14,7 +14,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="screen no-nav items-center justify-center min-h-[100dvh] relative">
+    <main className="screen no-nav centered items-center relative">
       <LoginForm onSubmit={onSubmit} defaultName={profile.name} />
     </main>
   )

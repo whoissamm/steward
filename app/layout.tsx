@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
-import { BottomNav } from "@/components/layout/BottomNav"
+import { TopNav } from "@/components/layout/TopNav"
 import { ThemeSync } from "@/components/layout/ThemeSync"
 import { PwaRegister } from "@/components/layout/PwaRegister"
 import { AgentMessageDock } from "@/components/layout/AgentMessageDock"
-import { VerdantSwirl, FilmGrain } from "@/components/ui/verdant-swirl"
+import { VerdantSwirl } from "@/components/ui/verdant-swirl"
+import { ProfileProvider } from "@/hooks/useProfile"
 
 export const metadata: Metadata = {
   title: "Steward — AI advisor for small farms",
@@ -51,13 +52,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <link rel="mask-icon" href="/icons/icon.svg" color="#15803d" />
       </head>
       <body className="min-h-full flex flex-col">
-        <VerdantSwirl />
-        <FilmGrain />
-        <ThemeSync />
-        <PwaRegister />
-        {children}
-        <AgentMessageDock />
-        <BottomNav />
+        <ProfileProvider>
+          <VerdantSwirl />
+          <ThemeSync />
+          <PwaRegister />
+          <TopNav />
+          {children}
+          <AgentMessageDock />
+        </ProfileProvider>
       </body>
     </html>
   )

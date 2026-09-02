@@ -4,29 +4,31 @@ import Link from "next/link"
 import { useMemo } from "react"
 import {
   SproutIcon,
-  CloudRainIcon,
+  CloudSunRainIcon,
   LandmarkIcon,
   StethoscopeIcon,
-  ShoppingBasketIcon,
+  StoreIcon,
+  WheatIcon,
   ArrowRightIcon,
   type LucideIcon,
 } from "lucide-react"
 
 const ICONS: Record<string, LucideIcon> = {
   sprout: SproutIcon,
-  "cloud-rain": CloudRainIcon,
+  "cloud-sun-rain": CloudSunRainIcon,
   landmark: LandmarkIcon,
+  wheat: WheatIcon,
   stethoscope: StethoscopeIcon,
-  "shopping-basket": ShoppingBasketIcon,
+  store: StoreIcon,
 }
 
 const AGENTS = [
-  { id: "steward",    name: "Steward",         role: "General farm advisor",  tagline: "Your everyday farm companion — start here.",   color: "#15803d", iconKey: "sprout" },
-  { id: "weather",    name: "Weather Ken",     role: "Weather & spray",       tagline: "Frost risk, rain windows, safe spray days.",   color: "#2563eb", iconKey: "cloud-rain" },
-  { id: "grants",     name: "Grant Advisor",   role: "Schemes & funding",     tagline: "SFI, Countryside Stewardship, deadlines.",     color: "#7c3aed", iconKey: "landmark" },
-  { id: "soil",       name: "Soil Doctor",     role: "Soil, nutrients, water",tagline: "Reads your sensors, plans your inputs.",       color: "#78716c", iconKey: "sprout" },
-  { id: "vet_bridge", name: "Vet Bridge",      role: "Livestock signposter",  tagline: "Never gives dosing — helps you call the right person.", color: "#d97706", iconKey: "stethoscope" },
-  { id: "market",     name: "Market Guide",    role: "Selling & diversifying",tagline: "Box schemes, farm shops, adding value.",       color: "#b45309", iconKey: "shopping-basket" },
+  { id: "steward",    name: "Steward", role: "Your everyday companion", tagline: "The friend who knows your farm — start here.",              color: "#15803d", iconKey: "sprout" },
+  { id: "weather",    name: "Ken",     role: "Weather & spray",         tagline: "Frost risk, rain windows, safe spray days.",                color: "#0284c7", iconKey: "cloud-sun-rain" },
+  { id: "grants",     name: "Grace",   role: "Schemes & grants",        tagline: "SFI, Countryside Stewardship, deadlines and paperwork.",    color: "#7c3aed", iconKey: "landmark" },
+  { id: "soil",       name: "Tom",     role: "Soil doctor",             tagline: "Soil health, nutrients, irrigation, sensors.",              color: "#a16207", iconKey: "wheat" },
+  { id: "vet_bridge", name: "Beth",    role: "Vet bridge",              tagline: "Never gives dosing — helps you decide when to call the vet.", color: "#dc2626", iconKey: "stethoscope" },
+  { id: "market",     name: "Kim",     role: "Selling & markets",       tagline: "Box schemes, farm shops, added value.",                     color: "#ea580c", iconKey: "store" },
 ]
 
 export default function AgentsPage() {

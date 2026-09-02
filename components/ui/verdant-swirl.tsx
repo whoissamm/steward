@@ -4,137 +4,97 @@ import { motion, useReducedMotion, useScroll, useTransform, useSpring } from "fr
 import { cn } from "@/lib/utils"
 
 /**
- * Ambient background: soft green + amber blobs drifting + scroll-linked parallax.
- * Mounted at layout level. Not clickable, respects reduced motion.
- * Body is transparent + z-index:1 in globals.css so this sits behind everything.
+ * Ambient background. Cheap on mobile:
+ *  - Blobs use transform-only animation (translate/scale) → GPU compositor
+ *  - Blur radii scaled down on narrow viewports (mobile paint is the enemy)
+ *  - `will-change: transform` promotes each blob to its own layer
+ *  - No `filter: blur()` animation — the blur is fixed, only transform changes
  */
 export function VerdantSwirl({ className, intensity = 1 }: { className?: string; intensity?: number }) {
   const reduced = useReducedMotion()
   const { scrollY } = useScroll()
-
-  // Blobs drift a little as the user scrolls — subtle parallax gives the whole
-  // background a sense of depth without being distracting.
-  const smoothY = useSpring(scrollY, { stiffness: 80, damping: 20, mass: 0.5 })
-  const y1 = useTransform(smoothY, [0, 800], reduced ? [0, 0] : [0, -80])
-  const y2 = useTransform(smoothY, [0, 800], reduced ? [0, 0] : [0, -40])
-  const y3 = useTransform(smoothY, [0, 800], reduced ? [0, 0] : [0, 60])
+  const smoothY = useSpring(scrollY, { stiffness: 60, damping: 20, mass: 0.6 })
+  const y1 = useTransform(smoothY, [0, 800], reduced ? [0, 0] : [0, -60])
+  const y2 = useTransform(smoothY, [0, 800], reduced ? [0, 0] : [0, -30])
+  const y3 = useTransform(smoothY, [0, 800], reduced ? [0, 0] : [0, 45])
 
   return (
     <div
-      className={cn(
-        "fixed inset-0 pointer-events-none overflow-hidden",
-        className,
-      )}
+      className={cn("fixed inset-0 pointer-events-none overflow-hidden", className)}
       style={{ zIndex: 0 }}
       aria-hidden
     >
-      {/* Base wash */}
+      {/* Static base wash — cheap radial gradient */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at 20% 10%, color-mix(in oklab, var(--green-500) 15%, transparent) 0%, transparent 50%), " +
-            "radial-gradient(ellipse at 80% 90%, color-mix(in oklab, var(--amber-400) 14%, transparent) 0%, transparent 55%), " +
-            "radial-gradient(ellipse at 60% 40%, color-mix(in oklab, var(--green-700) 8%, transparent) 0%, transparent 45%)",
+            "radial-gradient(ellipse at 15% 5%, color-mix(in oklab, var(--green-500) 18%, transparent) 0%, transparent 55%), " +
+            "radial-gradient(ellipse at 90% 90%, color-mix(in oklab, var(--amber-400) 15%, transparent) 0%, transparent 60%), " +
+            "radial-gradient(ellipse at 55% 45%, color-mix(in oklab, var(--green-700) 9%, transparent) 0%, transparent 50%)",
           opacity: intensity,
         }}
       />
 
-      {/* Blob 1 — green, upper-left, drifts up with scroll */}
+      {/* Blob 1 — top-left green */}
       <motion.div
-        className="absolute rounded-full"
-        style={{
-          top: "-10%",
-          left: "-10%",
-          width: "70vw",
-          height: "70vw",
-          maxWidth: 900,
-          maxHeight: 900,
-          background:
-            "radial-gradient(circle, color-mix(in oklab, var(--green-500) 50%, transparent) 0%, transparent 60%)",
-          filter: "blur(60px)",
-          opacity: 0.6 * intensity,
-          y: y1,
-        }}
-        animate={reduced ? undefined : { x: [0, 60, -30, 20, 0], scale: [1, 1.08, 0.95, 1.03, 1] }}
-        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute rounded-full blur-blob blob-1"
+        style={{ y: y1, opacity: 0.55 * intensity }}
+        animate={reduced ? undefined : { x: [0, 40, -20, 15, 0], scale: [1, 1.06, 0.96, 1.03, 1] }}
+        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Blob 2 — amber, lower-right, small parallax */}
+      {/* Blob 2 — bottom-right amber */}
       <motion.div
-        className="absolute rounded-full"
-        style={{
-          bottom: "-15%",
-          right: "-10%",
-          width: "60vw",
-          height: "60vw",
-          maxWidth: 800,
-          maxHeight: 800,
-          background:
-            "radial-gradient(circle, color-mix(in oklab, var(--amber-400) 55%, transparent) 0%, transparent 60%)",
-          filter: "blur(70px)",
-          opacity: 0.55 * intensity,
-          y: y2,
-        }}
-        animate={reduced ? undefined : { x: [0, -50, 30, -10, 0], scale: [1, 1.06, 0.92, 1.04, 1] }}
-        transition={{ duration: 28, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+        className="absolute rounded-full blur-blob blob-2"
+        style={{ y: y2, opacity: 0.5 * intensity }}
+        animate={reduced ? undefined : { x: [0, -35, 20, -8, 0], scale: [1, 1.05, 0.94, 1.03, 1] }}
+        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut", delay: 2 }}
       />
 
-      {/* Blob 3 — deep green, centre-ish, drifts down with scroll */}
+      {/* Blob 3 — centre deep green */}
       <motion.div
-        className="absolute rounded-full"
-        style={{
-          top: "40%",
-          left: "50%",
-          width: "50vw",
-          height: "50vw",
-          maxWidth: 700,
-          maxHeight: 700,
-          background:
-            "radial-gradient(circle, color-mix(in oklab, var(--green-700) 35%, transparent) 0%, transparent 65%)",
-          filter: "blur(80px)",
-          opacity: 0.5 * intensity,
-          x: "-50%",
-          y: y3,
-        }}
-        animate={reduced ? undefined : { scale: [1, 1.18, 0.94, 1.1, 1] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute rounded-full blur-blob blob-3"
+        style={{ y: y3, opacity: 0.45 * intensity }}
+        animate={reduced ? undefined : { scale: [1, 1.12, 0.94, 1.08, 1] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Small sparkle — a tiny amber blob that pulses gently, off-centre.
-          Adds life without stealing attention. */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          top: "15%",
-          right: "18%",
-          width: "20vw",
-          height: "20vw",
-          maxWidth: 260,
-          maxHeight: 260,
-          background:
-            "radial-gradient(circle, color-mix(in oklab, var(--amber-300) 45%, transparent) 0%, transparent 70%)",
-          filter: "blur(40px)",
-          opacity: 0.4 * intensity,
-        }}
-        animate={reduced ? undefined : { scale: [1, 1.25, 0.9, 1.1, 1], opacity: [0.4, 0.55, 0.3, 0.5, 0.4] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-      />
+      <style>{`
+        .blur-blob {
+          will-change: transform;
+          transform-style: preserve-3d;
+          backface-visibility: hidden;
+          contain: layout style paint;
+        }
+        .blob-1 {
+          top: -10%; left: -10%;
+          width: 60vw; height: 60vw; max-width: 720px; max-height: 720px;
+          background: radial-gradient(circle, color-mix(in oklab, var(--green-500) 55%, transparent) 0%, transparent 62%);
+          filter: blur(48px);
+        }
+        .blob-2 {
+          bottom: -15%; right: -12%;
+          width: 55vw; height: 55vw; max-width: 680px; max-height: 680px;
+          background: radial-gradient(circle, color-mix(in oklab, var(--amber-400) 60%, transparent) 0%, transparent 62%);
+          filter: blur(52px);
+        }
+        .blob-3 {
+          top: 40%; left: 50%;
+          width: 45vw; height: 45vw; max-width: 580px; max-height: 580px;
+          transform: translate(-50%, -50%);
+          background: radial-gradient(circle, color-mix(in oklab, var(--green-700) 40%, transparent) 0%, transparent 68%);
+          filter: blur(58px);
+        }
+        @media (min-width: 900px) {
+          .blob-1 { filter: blur(64px); }
+          .blob-2 { filter: blur(70px); }
+          .blob-3 { filter: blur(76px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .blur-blob { animation: none !important; transition: none !important; }
+        }
+      `}</style>
     </div>
-  )
-}
-
-export function FilmGrain({ opacity = 0.035 }: { opacity?: number }) {
-  return (
-    <div
-      className="fixed inset-0 pointer-events-none mix-blend-overlay"
-      style={{
-        zIndex: 0,
-        opacity,
-        backgroundImage:
-          "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>\")",
-      }}
-      aria-hidden
-    />
   )
 }
