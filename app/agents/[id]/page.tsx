@@ -88,10 +88,15 @@ function AgentPageInner() {
           <ArrowLeftIcon size={18} aria-hidden />
         </Link>
         <div
-          className="w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0"
-          style={{ background: `linear-gradient(135deg, ${agent.color}, color-mix(in oklab, ${agent.color} 70%, black))` }}
+          className="relative w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0"
+          style={{ background: agent.color }}
         >
           <Icon size={22} aria-hidden />
+          <span
+            className="absolute bottom-1 left-2 right-2 h-0.5 rounded-full pointer-events-none"
+            style={{ background: "color-mix(in oklab, white 60%, transparent)" }}
+            aria-hidden
+          />
         </div>
         <div className="flex flex-col min-w-0">
           <p className="text-xs text-[color:var(--muted)] font-semibold uppercase tracking-wider">

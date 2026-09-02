@@ -57,6 +57,16 @@ export function MessageDock({
   // if measurement fell through, which broke it on mobile).
   const [collapsedWidth, setCollapsedWidth] = useState<number>(340)
   const [inited, setInited] = useState(false)
+  // Cap the expanded width to the viewport so the pill never overflows on mobile.
+  const [safeExpanded, setSafeExpanded] = useState<number>(expandedWidth)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const update = () => setSafeExpanded(Math.min(expandedWidth, window.innerWidth - 24))
+    update()
+    window.addEventListener("resize", update)
+    return () => window.removeEventListener("resize", update)
+  }, [expandedWidth])
 
   // Refine collapsed width by measurement — safe fallback if it fails
   useEffect(() => {
@@ -133,7 +143,7 @@ export function MessageDock({
       <motion.div
         className="rounded-full px-3 py-2 shadow-2xl border border-[color:var(--border)] bg-[color:var(--surface)]"
         animate={{
-          width: isExpanded ? expandedWidth : collapsedWidth || undefined,
+          width: isExpanded ? safeExpanded : collapsedWidth || undefined,
           background: gradient || "var(--surface)",
         }}
         transition={{
@@ -184,46 +194,33 @@ export function MessageDock({
                   onClick={() => handleClick(i)}
                   aria-label={`Message ${a.name}`}
                   className={cn(
-                    "relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden",
+                    "relative w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden",
                     selectedThis && isExpanded ? "bg-white/90" : "",
                   )}
                   style={
                     selectedThis && isExpanded
                       ? undefined
-                      : {
-                          background:
-                            `radial-gradient(circle at 30% 25%, color-mix(in oklab, ${a.color} 45%, white) 0%, ${a.color} 40%, color-mix(in oklab, ${a.color} 60%, black) 100%)`,
-                          boxShadow:
-                            `inset 0 1px 0 color-mix(in oklab, white 45%, transparent), 0 2px 6px color-mix(in oklab, ${a.color} 45%, transparent)`,
-                        }
+                      : { background: a.color }
                   }
-                  whileHover={reduced ? undefined : { scale: 1.1, y: -3 }}
+                  whileHover={reduced ? undefined : { scale: 1.08, y: -2 }}
                   whileTap={{ scale: 0.94 }}
                 >
-                  {/* Inner sheen — subtle radial highlight top-left */}
-                  {!(selectedThis && isExpanded) && (
-                    <span
-                      className="absolute inset-0 rounded-full pointer-events-none"
-                      style={{
-                        background:
-                          "radial-gradient(ellipse 60% 40% at 30% 20%, rgba(255,255,255,0.35), transparent 70%)",
-                      }}
-                      aria-hidden
-                    />
-                  )}
                   <span
                     className={cn(
                       "relative flex items-center justify-center z-10",
                       selectedThis && isExpanded ? "text-[color:var(--fg)]" : "text-white",
                     )}
-                    style={
-                      !(selectedThis && isExpanded)
-                        ? { filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.25))" }
-                        : undefined
-                    }
                   >
                     {a.icon}
                   </span>
+                  {/* Subtle bottom accent stripe — matches the home-screen icon */}
+                  {!(selectedThis && isExpanded) && (
+                    <span
+                      className="absolute bottom-1 left-2 right-2 h-0.5 rounded-full pointer-events-none"
+                      style={{ background: "color-mix(in oklab, white 65%, transparent)" }}
+                      aria-hidden
+                    />
+                  )}
                   {a.online !== false && (
                     <motion.span
                       className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[color:var(--green-500)] border-2 border-[color:var(--surface)]"
