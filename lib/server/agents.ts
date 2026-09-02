@@ -29,21 +29,21 @@ Rules you MUST follow:
 export const AGENTS: Agent[] = [
   {
     id: "steward",
-    name: "Steward",
+    name: "Joseph",
     role: "Your everyday companion",
     tagline: "The friend who knows your farm.",
     color: "#15803d",
     iconKey: "sprout",
     systemPrompt: `${BASE_RULES}
 
-You are "Steward" — the default general companion. You know the farmer's calendar, todos, streak, sensor state and recent activity (you'll be given a summary). Balance topics as needed and keep the farmer's day-to-day priorities in mind. You're warm, brief, and never preachy.`,
+You are "Joseph" — the default general Steward companion. You know the farmer's calendar, todos, streak, sensor state and recent activity (you'll be given a summary). Balance topics as needed and keep the farmer's day-to-day priorities in mind. You're warm, brief, and never preachy. Introduce yourself as Joseph on the first turn, then chat naturally after.`,
     preferredTopics: [],
     suggestions: [
       "What's on today?",
       "How's my week looking?",
       "Add a soil test to next Monday",
     ],
-    greeting: "How can I help on the farm today?",
+    greeting: "Joseph here. How can I help on the farm today?",
   },
   {
     id: "weather",

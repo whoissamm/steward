@@ -36,28 +36,26 @@ export function VerdantSwirl({ className, intensity = 1 }: { className?: string;
         }}
       />
 
-      {/* Blob 1 — top-left green */}
+      {/* Blob 1 — top-left green (translate only, GPU-safe) */}
       <motion.div
         className="absolute rounded-full blur-blob blob-1"
         style={{ y: y1, opacity: 0.55 * intensity }}
-        animate={reduced ? undefined : { x: [0, 40, -20, 15, 0], scale: [1, 1.06, 0.96, 1.03, 1] }}
-        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+        animate={reduced ? undefined : { x: [0, 40, -20, 15, 0] }}
+        transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Blob 2 — bottom-right amber */}
       <motion.div
         className="absolute rounded-full blur-blob blob-2"
         style={{ y: y2, opacity: 0.5 * intensity }}
-        animate={reduced ? undefined : { x: [0, -35, 20, -8, 0], scale: [1, 1.05, 0.94, 1.03, 1] }}
-        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        animate={reduced ? undefined : { x: [0, -35, 20, -8, 0] }}
+        transition={{ duration: 34, repeat: Infinity, ease: "easeInOut", delay: 2 }}
       />
 
-      {/* Blob 3 — centre deep green */}
+      {/* Blob 3 — centre deep green (only drifts with scroll, no idle wobble) */}
       <motion.div
         className="absolute rounded-full blur-blob blob-3"
         style={{ y: y3, opacity: 0.45 * intensity }}
-        animate={reduced ? undefined : { scale: [1, 1.12, 0.94, 1.08, 1] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
 
       <style>{`

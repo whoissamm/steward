@@ -24,6 +24,7 @@ import { levelFor, nextLevel, BADGES } from "@/lib/gamification"
 import { StatWidget } from "@/components/ui/stat-widget"
 import { HealthBar } from "@/components/ui/health-bar"
 import { ShimmerLoader } from "@/components/ui/shimmer-loader"
+import { useIsMobile } from "@/hooks/useIsMobile"
 
 export default function HomePage() {
   const router = useRouter()
@@ -206,9 +207,9 @@ function HomeHero({
         {words.map((w, i) => (
           <motion.span
             key={i}
-            initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ delay: 0.18 + i * 0.06, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 + i * 0.045, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="inline-block"
           >
             {w === " " ? " " : w}

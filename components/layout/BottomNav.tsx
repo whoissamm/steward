@@ -16,9 +16,9 @@ const HIDE_EXACT = new Set(["/", "/login", "/onboard"])
 const HIDE_PREFIX = ["/agents/"]
 
 /**
- * Mobile-only bottom nav. On desktop (sm+) we show TopNav instead so the
- * bottom zone belongs to the AgentMessageDock (chat is more-used than nav
- * on this app).
+ * Primary navigation — the macOS-style magnifying Dock, pinned to the TOP
+ * of every product page. Agent message dock lives at the BOTTOM.
+ * (Name is BottomNav for backwards compat with the import graph.)
  */
 export function BottomNav() {
   const pathname = usePathname()
@@ -27,13 +27,18 @@ export function BottomNav() {
   if (HIDE_PREFIX.some((p) => pathname.startsWith(p))) return null
 
   return (
-    <div className="sm:hidden">
-      <Dock>
-        {ITEMS.map(({ href, label, icon }) => {
-          const active = pathname === href || (href === "/agents" && pathname === "/ask")
-          return <DockItem key={href} href={href} label={label} icon={icon} active={active} />
-        })}
-      </Dock>
+    <div
+      className="fixed left-0 right-0 z-40 pointer-events-none px-3"
+      style={{ top: `calc(env(safe-area-inset-top, 0px) + 12px)` }}
+    >
+      <div className="pointer-events-auto flex justify-center">
+        <Dock>
+          {ITEMS.map(({ href, label, icon }) => {
+            const active = pathname === href || (href === "/agents" && pathname === "/ask")
+            return <DockItem key={href} href={href} label={label} icon={icon} active={active} />
+          })}
+        </Dock>
+      </div>
     </div>
   )
 }

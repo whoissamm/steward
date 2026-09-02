@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
-import { TopNav } from "@/components/layout/TopNav"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { ThemeSync } from "@/components/layout/ThemeSync"
 import { PwaRegister } from "@/components/layout/PwaRegister"
@@ -57,10 +56,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <VerdantSwirl />
           <ThemeSync />
           <PwaRegister />
-          <TopNav />
+          <BottomNav />
           {children}
           <AgentMessageDock />
-          <BottomNav />
         </ProfileProvider>
       </body>
     </html>

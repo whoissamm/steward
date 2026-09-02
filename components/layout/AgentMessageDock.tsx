@@ -29,7 +29,7 @@ type AgentDef = {
 }
 
 const AGENTS: AgentDef[] = [
-  { id: "steward",    name: "Steward", role: "Your everyday companion", color: "#15803d", Icon: SproutIcon },
+  { id: "steward",    name: "Joseph",  role: "Your everyday companion", color: "#15803d", Icon: SproutIcon },
   { id: "weather",    name: "Ken",     role: "Weather & spray",         color: "#0284c7", Icon: CloudSunRainIcon },
   { id: "grants",     name: "Grace",   role: "Schemes & grants",        color: "#7c3aed", Icon: LandmarkIcon },
   { id: "soil",       name: "Tom",     role: "Soil doctor",             color: "#a16207", Icon: WheatIcon },
@@ -84,7 +84,7 @@ export function AgentMessageDock() {
       onSend={(message, agent) => {
         router.push(`/agents/${agent.id}?q=${encodeURIComponent(message)}`)
       }}
-      placeholder={(name) => (name === "Steward" ? "Ask Steward…" : `Message ${name}…`)}
+      placeholder={(name) => `Message ${name}…`}
     />
   )
 }

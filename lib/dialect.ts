@@ -21,6 +21,11 @@ export function greetingFor(accent: string, name: string): string {
   return `${a.greeting}, ${cleanName}`
 }
 
+/** Alias — same as greetingFor, kept for onboarding preview call-sites. */
+export function accentGreetingPreview(accent: string, name: string): string {
+  return greetingFor(accent, name)
+}
+
 const INPUT_DIALECT: Record<string, string> = {
   wee: "small", ken: "know", kens: "knows", aye: "yes", nae: "no",
   naw: "no", cannae: "cannot", dinnae: "do not", coo: "cow", coos: "cows",

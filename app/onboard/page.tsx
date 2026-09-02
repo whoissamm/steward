@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { AccentPicker } from "@/components/onboard/AccentPicker"
 import { useProfile } from "@/hooks/useProfile"
-import { greetingFor } from "@/lib/dialect"
+import { accentGreetingPreview } from "@/lib/dialect"
 import {
   ArrowRightIcon, ArrowLeftIcon, LeafIcon, TractorIcon, MilkIcon, CarrotIcon, ShuffleIcon,
   CheckIcon, MinusIcon, SproutIcon, MicIcon, MessageCircleIcon,
@@ -178,7 +178,7 @@ export default function OnboardPage() {
               </div>
               <AccentPicker value={accent} onChange={setAccent} name={name} />
               <p className="text-sm text-[color:var(--muted)] italic px-1">
-                Preview: &ldquo;{greetingFor(accent, name)}&rdquo;
+                Preview: &ldquo;{accentGreetingPreview(accent, name)}&rdquo;
               </p>
             </div>
           )}
