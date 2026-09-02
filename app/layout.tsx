@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { TopNav } from "@/components/layout/TopNav"
+import { BottomNav } from "@/components/layout/BottomNav"
 import { ThemeSync } from "@/components/layout/ThemeSync"
 import { PwaRegister } from "@/components/layout/PwaRegister"
 import { AgentMessageDock } from "@/components/layout/AgentMessageDock"
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <TopNav />
           {children}
           <AgentMessageDock />
+          <BottomNav />
         </ProfileProvider>
       </body>
     </html>

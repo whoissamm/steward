@@ -25,7 +25,7 @@ export function TopNav() {
 
   return (
     <header
-      className="sticky top-0 z-40 backdrop-blur-md border-b border-[color:var(--border)]"
+      className="sticky top-0 z-40 backdrop-blur-md border-b border-[color:var(--border)] hidden sm:block"
       style={{
         background: "color-mix(in oklab, var(--bg) 78%, transparent)",
         paddingTop: "env(safe-area-inset-top, 0px)",

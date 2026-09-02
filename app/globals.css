@@ -69,15 +69,25 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 20px 16px 110px;
+  /* Mobile: room at the bottom for BottomNav; extra top for the top-positioned agent dock */
+  padding: 76px 16px 110px;
   max-width: 768px;
   margin: 0 auto;
   width: 100%;
   position: relative;
   z-index: 1;
 }
+@media (min-width: 640px) {
+  .screen {
+    /* Desktop: TopNav is sticky in flow, agent dock sits at bottom */
+    padding: 20px 16px 96px;
+  }
+}
 
-.screen.no-nav { padding-bottom: 20px; }
+.screen.no-nav { padding-top: 20px; padding-bottom: 20px; }
+@media (min-width: 640px) {
+  .screen.no-nav { padding-top: 20px; padding-bottom: 20px; }
+}
 .screen.wide { max-width: 1024px; }
 
 /* Centered variant — /login and /onboard center vertically on wide screens

@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import {
   SproutIcon,
@@ -36,10 +37,26 @@ const AGENTS: AgentDef[] = [
   { id: "market",     name: "Kim",     role: "Selling & markets",       color: "#ea580c", Icon: StoreIcon },
 ]
 
+/**
+ * Positions responsively:
+ * - Mobile (<sm): sits at TOP of viewport, since the bottom is taken by BottomNav.
+ * - Desktop (≥sm): sits at BOTTOM (thumb-reach) since TopNav owns the top.
+ */
 export function AgentMessageDock() {
   const pathname = usePathname()
   const router = useRouter()
-  const { profile, loaded } = useProfile()
+  const { profile, loaded, update } = useProfile()
+  // Default to bottom (SSR / wide screens); switches to top on mobile after mount.
+  const [position, setPosition] = useState<"top" | "bottom">("bottom")
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const m = window.matchMedia("(max-width: 639px)")
+    const update = () => setPosition(m.matches ? "top" : "bottom")
+    update()
+    m.addEventListener("change", update)
+    return () => m.removeEventListener("change", update)
+  }, [])
 
   if (!pathname) return null
   if (HIDE_EXACT.has(pathname)) return null
@@ -58,13 +75,10 @@ export function AgentMessageDock() {
   return (
     <MessageDock
       agents={dockAgents}
+      position={position}
       onSelect={(a) => {
-        // Reflect preferred agent
-        // (no-op if same as current; deliberate — user picks in the flow)
         if (a.id !== profile.agent_preference) {
-          // Persist as user's preferred agent so return visits open with them
-          // via ProfileProvider — done lazily via update helper
-          // (no direct import to keep this thin)
+          update({ agent_preference: a.id })
         }
       }}
       onSend={(message, agent) => {

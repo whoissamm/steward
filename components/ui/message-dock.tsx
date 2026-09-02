@@ -53,10 +53,12 @@ export function MessageDock({
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const [message, setMessage] = useState("")
   const dockRef = useRef<HTMLDivElement>(null)
-  const [collapsedWidth, setCollapsedWidth] = useState<number>(0)
+  // Sensible default so the pill is visible on first paint (was 0 = invisible
+  // if measurement fell through, which broke it on mobile).
+  const [collapsedWidth, setCollapsedWidth] = useState<number>(340)
   const [inited, setInited] = useState(false)
 
-  // Measure the initial collapsed width once
+  // Refine collapsed width by measurement — safe fallback if it fails
   useEffect(() => {
     if (dockRef.current && !inited) {
       const w = dockRef.current.offsetWidth
