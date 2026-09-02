@@ -55,28 +55,7 @@ export default function HomePage() {
 
   return (
     <main className="screen">
-      <motion.section
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col gap-2"
-      >
-        <p className="sec">Welcome back</p>
-        <h1 className="text-3xl md:text-4xl font-bold leading-tight">{greeting}.</h1>
-        <p className="text-[color:var(--muted)] flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span>{level}</span>
-          {next && <><span aria-hidden>·</span><span>{next.needed} pts to {next.name}</span></>}
-          {profile.streak > 0 && (
-            <>
-              <span aria-hidden>·</span>
-              <span className="inline-flex items-center gap-1">
-                <FlameIcon className="text-[color:var(--amber-500)]" size={14} aria-hidden />
-                {profile.streak}-day streak
-              </span>
-            </>
-          )}
-        </p>
-      </motion.section>
+      <HomeHero greeting={greeting} name={profile.name} level={level} next={next} streak={profile.streak} />
 
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -182,6 +161,87 @@ export default function HomePage() {
         </Link>
       </motion.section>
     </main>
+  )
+}
+
+function HomeHero({
+  greeting,
+  name,
+  level,
+  next,
+  streak,
+}: {
+  greeting: string
+  name: string
+  level: string
+  next: { name: string; needed: number; progress: number } | null
+  streak: number
+}) {
+  const hour = new Date().getHours()
+  const timeOfDay =
+    hour < 6 ? "Late night" :
+    hour < 12 ? "Good morning" :
+    hour < 17 ? "Good afternoon" :
+    hour < 21 ? "Good evening" : "Good night"
+
+  // Split greeting into words for staggered per-word reveal
+  const words = greeting.split(/(\s+)/) // keep whitespace
+
+  return (
+    <motion.section
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="flex flex-col gap-3 pt-2"
+    >
+      <motion.p
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="text-xs font-bold uppercase tracking-[0.28em] text-[color:var(--green-700)]"
+      >
+        {timeOfDay}, {name || "friend"}
+      </motion.p>
+      <h1 className="text-4xl md:text-5xl font-bold leading-[1.05] tracking-tight">
+        {words.map((w, i) => (
+          <motion.span
+            key={i}
+            initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ delay: 0.18 + i * 0.06, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="inline-block"
+          >
+            {w === " " ? " " : w}
+          </motion.span>
+        ))}
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.18 + words.length * 0.06, duration: 0.4 }}
+          className="text-[color:var(--green-700)]"
+        >
+          .
+        </motion.span>
+      </h1>
+      <motion.p
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.55, duration: 0.5 }}
+        className="text-[color:var(--muted)] flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+      >
+        <span>{level}</span>
+        {next && <><span aria-hidden>·</span><span>{next.needed} pts to {next.name}</span></>}
+        {streak > 0 && (
+          <>
+            <span aria-hidden>·</span>
+            <span className="inline-flex items-center gap-1">
+              <FlameIcon className="text-[color:var(--amber-500)]" size={14} aria-hidden />
+              {streak}-day streak
+            </span>
+          </>
+        )}
+      </motion.p>
+    </motion.section>
   )
 }
 

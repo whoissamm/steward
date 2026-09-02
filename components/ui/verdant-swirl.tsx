@@ -1,16 +1,24 @@
 "use client"
 
-import { motion, useReducedMotion } from "framer-motion"
+import { motion, useReducedMotion, useScroll, useTransform, useSpring } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 /**
- * Ambient background: soft green + amber gradient blobs slowly drifting.
+ * Ambient background: soft green + amber blobs drifting + scroll-linked parallax.
  * Mounted at layout level. Not clickable, respects reduced motion.
- * Uses `position: fixed; inset: 0` and lives beneath body via z-index: 0
- * (body itself is transparent + z-index: 1 in globals.css).
+ * Body is transparent + z-index:1 in globals.css so this sits behind everything.
  */
 export function VerdantSwirl({ className, intensity = 1 }: { className?: string; intensity?: number }) {
   const reduced = useReducedMotion()
+  const { scrollY } = useScroll()
+
+  // Blobs drift a little as the user scrolls — subtle parallax gives the whole
+  // background a sense of depth without being distracting.
+  const smoothY = useSpring(scrollY, { stiffness: 80, damping: 20, mass: 0.5 })
+  const y1 = useTransform(smoothY, [0, 800], reduced ? [0, 0] : [0, -80])
+  const y2 = useTransform(smoothY, [0, 800], reduced ? [0, 0] : [0, -40])
+  const y3 = useTransform(smoothY, [0, 800], reduced ? [0, 0] : [0, 60])
+
   return (
     <div
       className={cn(
@@ -20,19 +28,19 @@ export function VerdantSwirl({ className, intensity = 1 }: { className?: string;
       style={{ zIndex: 0 }}
       aria-hidden
     >
-      {/* Base gradient wash — ensures visible warmth even before blobs animate */}
+      {/* Base wash */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at 20% 10%, color-mix(in oklab, var(--green-500) 12%, transparent) 0%, transparent 50%), " +
-            "radial-gradient(ellipse at 80% 90%, color-mix(in oklab, var(--amber-400) 12%, transparent) 0%, transparent 55%), " +
-            "radial-gradient(ellipse at 60% 40%, color-mix(in oklab, var(--green-700) 6%, transparent) 0%, transparent 45%)",
+            "radial-gradient(ellipse at 20% 10%, color-mix(in oklab, var(--green-500) 15%, transparent) 0%, transparent 50%), " +
+            "radial-gradient(ellipse at 80% 90%, color-mix(in oklab, var(--amber-400) 14%, transparent) 0%, transparent 55%), " +
+            "radial-gradient(ellipse at 60% 40%, color-mix(in oklab, var(--green-700) 8%, transparent) 0%, transparent 45%)",
           opacity: intensity,
         }}
       />
 
-      {/* Drifting blob 1 — green */}
+      {/* Blob 1 — green, upper-left, drifts up with scroll */}
       <motion.div
         className="absolute rounded-full"
         style={{
@@ -40,18 +48,19 @@ export function VerdantSwirl({ className, intensity = 1 }: { className?: string;
           left: "-10%",
           width: "70vw",
           height: "70vw",
-          maxWidth: 800,
-          maxHeight: 800,
+          maxWidth: 900,
+          maxHeight: 900,
           background:
-            "radial-gradient(circle, color-mix(in oklab, var(--green-500) 40%, transparent) 0%, transparent 60%)",
+            "radial-gradient(circle, color-mix(in oklab, var(--green-500) 50%, transparent) 0%, transparent 60%)",
           filter: "blur(60px)",
-          opacity: 0.55 * intensity,
+          opacity: 0.6 * intensity,
+          y: y1,
         }}
-        animate={reduced ? undefined : { x: [0, 40, -20, 0], y: [0, 30, -30, 0] }}
-        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+        animate={reduced ? undefined : { x: [0, 60, -30, 20, 0], scale: [1, 1.08, 0.95, 1.03, 1] }}
+        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Drifting blob 2 — amber */}
+      {/* Blob 2 — amber, lower-right, small parallax */}
       <motion.div
         className="absolute rounded-full"
         style={{
@@ -59,18 +68,19 @@ export function VerdantSwirl({ className, intensity = 1 }: { className?: string;
           right: "-10%",
           width: "60vw",
           height: "60vw",
-          maxWidth: 700,
-          maxHeight: 700,
+          maxWidth: 800,
+          maxHeight: 800,
           background:
-            "radial-gradient(circle, color-mix(in oklab, var(--amber-400) 45%, transparent) 0%, transparent 60%)",
+            "radial-gradient(circle, color-mix(in oklab, var(--amber-400) 55%, transparent) 0%, transparent 60%)",
           filter: "blur(70px)",
-          opacity: 0.5 * intensity,
+          opacity: 0.55 * intensity,
+          y: y2,
         }}
-        animate={reduced ? undefined : { x: [0, -30, 20, 0], y: [0, -40, 20, 0] }}
-        transition={{ duration: 40, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+        animate={reduced ? undefined : { x: [0, -50, 30, -10, 0], scale: [1, 1.06, 0.92, 1.04, 1] }}
+        transition={{ duration: 28, repeat: Infinity, ease: "easeInOut", delay: 3 }}
       />
 
-      {/* Drifting blob 3 — deep green */}
+      {/* Blob 3 — deep green, centre-ish, drifts down with scroll */}
       <motion.div
         className="absolute rounded-full"
         style={{
@@ -78,25 +88,43 @@ export function VerdantSwirl({ className, intensity = 1 }: { className?: string;
           left: "50%",
           width: "50vw",
           height: "50vw",
-          maxWidth: 600,
-          maxHeight: 600,
+          maxWidth: 700,
+          maxHeight: 700,
           background:
-            "radial-gradient(circle, color-mix(in oklab, var(--green-700) 30%, transparent) 0%, transparent 65%)",
+            "radial-gradient(circle, color-mix(in oklab, var(--green-700) 35%, transparent) 0%, transparent 65%)",
           filter: "blur(80px)",
-          opacity: 0.45 * intensity,
-          transform: "translate(-50%, -50%)",
+          opacity: 0.5 * intensity,
+          x: "-50%",
+          y: y3,
         }}
-        animate={reduced ? undefined : { scale: [1, 1.15, 0.95, 1] }}
-        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+        animate={reduced ? undefined : { scale: [1, 1.18, 0.94, 1.1, 1] }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Small sparkle — a tiny amber blob that pulses gently, off-centre.
+          Adds life without stealing attention. */}
+      <motion.div
+        className="absolute rounded-full"
+        style={{
+          top: "15%",
+          right: "18%",
+          width: "20vw",
+          height: "20vw",
+          maxWidth: 260,
+          maxHeight: 260,
+          background:
+            "radial-gradient(circle, color-mix(in oklab, var(--amber-300) 45%, transparent) 0%, transparent 70%)",
+          filter: "blur(40px)",
+          opacity: 0.4 * intensity,
+        }}
+        animate={reduced ? undefined : { scale: [1, 1.25, 0.9, 1.1, 1], opacity: [0.4, 0.55, 0.3, 0.5, 0.4] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
       />
     </div>
   )
 }
 
-/**
- * Grain overlay — very subtle noise, gives the bg a cinematic film look.
- */
-export function FilmGrain({ opacity = 0.04 }: { opacity?: number }) {
+export function FilmGrain({ opacity = 0.035 }: { opacity?: number }) {
   return (
     <div
       className="fixed inset-0 pointer-events-none mix-blend-overlay"

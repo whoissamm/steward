@@ -81,11 +81,18 @@ body {
 .screen.wide { max-width: 1024px; }
 
 .card {
-  background: var(--surface);
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  backdrop-filter: blur(6px);
   border-radius: 20px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.06);
   border: 1px solid var(--border);
+  transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 250ms, border-color 200ms;
+}
+a.card:hover, button.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+  border-color: color-mix(in oklab, var(--green-600) 40%, var(--border));
 }
 
 .card-tight { padding: 14px 16px; }

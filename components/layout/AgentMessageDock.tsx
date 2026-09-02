@@ -24,7 +24,9 @@ import { cn } from "@/lib/utils"
 // Hidden on splash/login/onboard, on /home (user directive: no AI bots on home),
 // and on chat pages (agents live there already).
 
-const HIDE_EXACT = new Set(["/", "/login", "/onboard", "/home"])
+// Home CAN show the floating dock (per product decision) — just no in-page
+// agent picker section. Dock stays hidden on splash/login/onboard/chat pages.
+const HIDE_EXACT = new Set(["/", "/login", "/onboard"])
 const HIDE_PREFIX = ["/agents/"]
 
 type Agent = { id: string; name: string; role: string; color: string; Icon: LucideIcon }
