@@ -194,33 +194,16 @@ export function MessageDock({
                   onClick={() => handleClick(i)}
                   aria-label={`Message ${a.name}`}
                   className={cn(
-                    "relative w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden",
-                    selectedThis && isExpanded ? "bg-white/90" : "",
+                    "relative w-11 h-11 rounded-full flex items-center justify-center overflow-hidden",
+                    selectedThis && isExpanded ? "bg-white ring-2 ring-white/60" : "",
                   )}
-                  style={
-                    selectedThis && isExpanded
-                      ? undefined
-                      : { background: a.color }
-                  }
                   whileHover={reduced ? undefined : { scale: 1.08, y: -2 }}
                   whileTap={{ scale: 0.94 }}
                 >
-                  <span
-                    className={cn(
-                      "relative flex items-center justify-center z-10",
-                      selectedThis && isExpanded ? "text-[color:var(--fg)]" : "text-white",
-                    )}
-                  >
+                  {/* Full-bleed illustrated icon — the SVG carries its own circle bg */}
+                  <span className="relative flex items-center justify-center">
                     {a.icon}
                   </span>
-                  {/* Subtle bottom accent stripe — matches the home-screen icon */}
-                  {!(selectedThis && isExpanded) && (
-                    <span
-                      className="absolute bottom-1 left-2 right-2 h-0.5 rounded-full pointer-events-none"
-                      style={{ background: "color-mix(in oklab, white 65%, transparent)" }}
-                      aria-hidden
-                    />
-                  )}
                   {a.online !== false && (
                     <motion.span
                       className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[color:var(--green-500)] border-2 border-[color:var(--surface)]"

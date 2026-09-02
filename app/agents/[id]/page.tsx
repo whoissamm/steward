@@ -3,17 +3,11 @@
 import { Suspense, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useParams, useSearchParams } from "next/navigation"
-import {
-  SproutIcon,
-  CloudSunRainIcon,
-  LandmarkIcon,
-  StethoscopeIcon,
-  StoreIcon,
-  WheatIcon,
-  ArrowLeftIcon,
-  type LucideIcon,
-} from "lucide-react"
+import { ArrowLeftIcon } from "lucide-react"
 import { AgentChat } from "@/components/ask/AgentChat"
+import { AGENT_ICON_MAP, JosephIcon } from "@/components/ui/agent-icons"
+import { nameForAgent, type AgentId } from "@/lib/agent-names"
+import { useProfile } from "@/hooks/useProfile"
 
 type ApiAgent = {
   id: string
@@ -26,20 +20,12 @@ type ApiAgent = {
   greeting: string
 }
 
-const ICONS: Record<string, LucideIcon> = {
-  sprout: SproutIcon,
-  "cloud-sun-rain": CloudSunRainIcon,
-  landmark: LandmarkIcon,
-  wheat: WheatIcon,
-  stethoscope: StethoscopeIcon,
-  store: StoreIcon,
-}
-
 function AgentPageInner() {
   const params = useParams<{ id: string }>()
   const search = useSearchParams()
   const q = search.get("q") || undefined
-  const id = params?.id ?? "steward"
+  const id = (params?.id ?? "steward") as AgentId
+  const { profile } = useProfile()
   const [agent, setAgent] = useState<ApiAgent | null>(null)
 
   useEffect(() => {
@@ -52,14 +38,13 @@ function AgentPageInner() {
         setAgent(found)
       })
       .catch(() => {
-        // Fallback to a minimal Steward if API is unreachable
         if (!cancelled) {
           setAgent({
             id,
             name: "Steward",
             role: "General farm advisor",
             tagline: "Your everyday farm companion.",
-            color: "#15803d",
+            color: "#166534",
             iconKey: "sprout",
             suggestions: ["Do I need to irrigate today?", "Can I still apply for the SFI scheme?"],
             greeting: "How can I help on the farm today?",
@@ -71,7 +56,9 @@ function AgentPageInner() {
     }
   }, [id])
 
-  const Icon = useMemo(() => (agent ? ICONS[agent.iconKey] || SproutIcon : SproutIcon), [agent])
+  const Icon = useMemo(() => AGENT_ICON_MAP[id] || JosephIcon, [id])
+  const gender = profile.voice_gender ?? "male"
+  const resolvedName = nameForAgent(id, gender)
 
   if (!agent) {
     return (
@@ -87,30 +74,20 @@ function AgentPageInner() {
         <Link href="/agents" className="btn-ghost !p-2" aria-label="Back to agents">
           <ArrowLeftIcon size={18} aria-hidden />
         </Link>
-        <div
-          className="relative w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0"
-          style={{ background: agent.color }}
-        >
-          <Icon size={22} aria-hidden />
-          <span
-            className="absolute bottom-1 left-2 right-2 h-0.5 rounded-full pointer-events-none"
-            style={{ background: "color-mix(in oklab, white 60%, transparent)" }}
-            aria-hidden
-          />
-        </div>
+        <Icon size={48} />
         <div className="flex flex-col min-w-0">
           <p className="text-xs text-[color:var(--muted)] font-semibold uppercase tracking-wider">
             {agent.role}
           </p>
-          <h1 className="text-lg font-bold leading-tight">{agent.name}</h1>
+          <h1 className="text-lg font-bold leading-tight">{resolvedName}</h1>
         </div>
       </header>
 
       <AgentChat
         agentId={agent.id}
-        agentName={agent.name}
+        agentName={resolvedName}
         agentColor={agent.color}
-        greeting={agent.greeting}
+        greeting={agent.greeting.replace(agent.name, resolvedName)}
         suggestions={agent.suggestions}
         initialQuestion={q}
       />

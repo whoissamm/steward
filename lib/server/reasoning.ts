@@ -1,6 +1,7 @@
 import { retrieve, confidenceLabel, composeOffline, type Hit } from "./retrieval"
 import { classifyTopic, followupsFor } from "./topics"
 import { getAgent, type Agent } from "./agents"
+import { AGENT_NAMES, type AgentId } from "../agent-names"
 
 const DEFAULT_MODEL = "gemini-3.6-flash"
 
@@ -147,6 +148,20 @@ export type AskOptions = {
   profileContext?: string
   imageBase64?: string
   imageMime?: string
+  voiceGender?: "male" | "female"
+}
+
+/**
+ * Swap the male name in the agent's system prompt for the female-set name
+ * when the farmer prefers a female voice, so the agent introduces themselves
+ * consistently in either voice. Example: "You are Joseph" → "You are Sarah".
+ */
+function resolveSystemPrompt(agent: Agent, voiceGender: "male" | "female"): string {
+  if (voiceGender === "male") return agent.systemPrompt
+  const set = AGENT_NAMES[agent.id as AgentId]
+  if (!set) return agent.systemPrompt
+  // Replace the male name with the female one everywhere it appears.
+  return agent.systemPrompt.split(set.male).join(set.female)
 }
 
 const TOOL_INSTRUCTIONS = `
@@ -165,6 +180,8 @@ Rules:
 
 export async function askInternal(question: string, opts: AskOptions = {}): Promise<Answer> {
   const agent = getAgent(opts.agentId || "steward")
+  const voiceGender = opts.voiceGender ?? "male"
+  const baseSystem = resolveSystemPrompt(agent, voiceGender)
   const sensorContext = opts.sensorContext ?? ""
   const behaviourSummary = opts.behaviourSummary ?? ""
   const profileContext = opts.profileContext ?? ""
@@ -201,7 +218,7 @@ export async function askInternal(question: string, opts: AskOptions = {}): Prom
       parts.push({ inlineData: { mimeType: opts.imageMime, data: opts.imageBase64 } })
     }
 
-    const raw = await callGemini(agent.systemPrompt + TOOL_INSTRUCTIONS, parts)
+    const raw = await callGemini(baseSystem + TOOL_INSTRUCTIONS, parts)
     if (raw) {
       const { cleanText, actions } = extractActions(raw)
       return {
@@ -224,7 +241,7 @@ export async function askInternal(question: string, opts: AskOptions = {}): Prom
 
   // --- No strong KB match: general/companion answer (warm, no fake citations) ---
   const generalSystem =
-    agent.systemPrompt.replace(/Rules you MUST follow:[\s\S]*?(?=\n\n|$)/, "") + `
+    baseSystem.replace(/Rules you MUST follow:[\s\S]*?(?=\n\n|$)/, "") + `
 For this reply you do NOT have a matching document in the farm knowledge base — the farmer is asking something general (chat, wellbeing, planning, life on the farm). Answer warmly and briefly from your own knowledge, in plain English, 2–4 sentences. Do NOT invent citations or scheme rules. If they ask about regulated advice (vet dosing, spray rates, disposal) still refuse and refer to a professional. If they seem in distress, prioritise their wellbeing and mention the Farming Community Network helpline (03000 111 999).
 ` + TOOL_INSTRUCTIONS
 

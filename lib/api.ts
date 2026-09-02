@@ -105,6 +105,7 @@ export const api = {
       agentId?: string
       behaviourSummary?: string
       profileContext?: string
+      voiceGender?: "male" | "female"
       imageBase64?: string
       imageMime?: string
     },
@@ -126,6 +127,7 @@ export const api = {
         agent_id: opts?.agentId,
         behaviour_summary: opts?.behaviourSummary,
         profile_context: opts?.profileContext,
+        voice_gender: opts?.voiceGender,
         image_base64: opts?.imageBase64,
         image_mime: opts?.imageMime,
       }),

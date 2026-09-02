@@ -13,6 +13,7 @@ type AskBody = {
   agent_id?: string
   behaviour_summary?: string
   profile_context?: string
+  voice_gender?: "male" | "female"
   image_base64?: string
   image_mime?: string
   profile?: {
@@ -88,6 +89,7 @@ export async function POST(req: NextRequest) {
     profileContext,
     imageBase64,
     imageMime,
+    voiceGender: body.voice_gender,
   })
 
   const pointsEarned = 5

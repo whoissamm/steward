@@ -2,40 +2,38 @@
 
 import Link from "next/link"
 import { useMemo } from "react"
-import {
-  SproutIcon,
-  CloudSunRainIcon,
-  LandmarkIcon,
-  StethoscopeIcon,
-  StoreIcon,
-  WheatIcon,
-  ArrowRightIcon,
-  type LucideIcon,
-} from "lucide-react"
+import { ArrowRightIcon } from "lucide-react"
+import { useProfile } from "@/hooks/useProfile"
+import { nameForAgent, type AgentId } from "@/lib/agent-names"
+import { AGENT_ICON_MAP } from "@/components/ui/agent-icons"
 
-const ICONS: Record<string, LucideIcon> = {
-  sprout: SproutIcon,
-  "cloud-sun-rain": CloudSunRainIcon,
-  landmark: LandmarkIcon,
-  wheat: WheatIcon,
-  stethoscope: StethoscopeIcon,
-  store: StoreIcon,
-}
-
-const AGENTS = [
-  { id: "steward",    name: "Joseph",  role: "Your everyday companion", tagline: "The friend who knows your farm — start here.",              color: "#15803d", iconKey: "sprout" },
-  { id: "weather",    name: "Ken",     role: "Weather & spray",         tagline: "Frost risk, rain windows, safe spray days.",                color: "#0284c7", iconKey: "cloud-sun-rain" },
-  { id: "grants",     name: "Grace",   role: "Schemes & grants",        tagline: "SFI, Countryside Stewardship, deadlines and paperwork.",    color: "#7c3aed", iconKey: "landmark" },
-  { id: "soil",       name: "Tom",     role: "Soil doctor",             tagline: "Soil health, nutrients, irrigation, sensors.",              color: "#a16207", iconKey: "wheat" },
-  { id: "vet_bridge", name: "Beth",    role: "Vet bridge",              tagline: "Never gives dosing — helps you decide when to call the vet.", color: "#dc2626", iconKey: "stethoscope" },
-  { id: "market",     name: "Kim",     role: "Selling & markets",       tagline: "Box schemes, farm shops, added value.",                     color: "#ea580c", iconKey: "store" },
+const AGENTS: {
+  id: AgentId
+  role: string
+  taglineMale: string
+  taglineFemale: string
+}[] = [
+  { id: "steward",    role: "Your everyday companion", taglineMale: "The friend who knows your farm — start here.",              taglineFemale: "The friend who knows your farm — start here." },
+  { id: "weather",    role: "Weather & spray",         taglineMale: "Frost risk, rain windows, safe spray days.",                 taglineFemale: "Frost risk, rain windows, safe spray days." },
+  { id: "grants",     role: "Schemes & grants",        taglineMale: "SFI, Countryside Stewardship, deadlines and paperwork.",     taglineFemale: "SFI, Countryside Stewardship, deadlines and paperwork." },
+  { id: "soil",       role: "Soil doctor",             taglineMale: "Soil health, nutrients, irrigation, sensors.",               taglineFemale: "Soil health, nutrients, irrigation, sensors." },
+  { id: "vet_bridge", role: "Vet bridge",              taglineMale: "Never gives dosing — helps you decide when to call the vet.",taglineFemale: "Never gives dosing — helps you decide when to call the vet." },
+  { id: "market",     role: "Selling & markets",       taglineMale: "Box schemes, farm shops, added value.",                      taglineFemale: "Box schemes, farm shops, added value." },
 ]
 
 export default function AgentsPage() {
+  const { profile } = useProfile()
+  const gender = profile.voice_gender ?? "male"
+
   const cards = useMemo(
     () =>
-      AGENTS.map((a) => ({ ...a, Icon: ICONS[a.iconKey] || SproutIcon })),
-    [],
+      AGENTS.map((a) => ({
+        ...a,
+        name: nameForAgent(a.id, gender),
+        Icon: AGENT_ICON_MAP[a.id],
+        tagline: gender === "female" ? a.taglineFemale : a.taglineMale,
+      })),
+    [gender],
   )
 
   return (
@@ -57,17 +55,7 @@ export default function AgentsPage() {
               href={`/agents/${a.id}`}
               className="card flex items-center gap-4 hover:border-[color:var(--green-600)] transition-colors"
             >
-              <div
-                className="relative flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-white"
-                style={{ background: a.color }}
-              >
-                <Icon size={26} aria-hidden />
-                <span
-                  className="absolute bottom-1.5 left-3 right-3 h-0.5 rounded-full pointer-events-none"
-                  style={{ background: "color-mix(in oklab, white 60%, transparent)" }}
-                  aria-hidden
-                />
-              </div>
+              <Icon size={64} />
               <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                 <p className="font-bold">{a.name}</p>
                 <p className="text-xs font-semibold text-[color:var(--muted)] uppercase tracking-wider">

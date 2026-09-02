@@ -1,46 +1,26 @@
 "use client"
 
 import { useRouter, usePathname } from "next/navigation"
-import {
-  SproutIcon,
-  CloudSunRainIcon,
-  LandmarkIcon,
-  StethoscopeIcon,
-  StoreIcon,
-  WheatIcon,
-  type LucideIcon,
-} from "lucide-react"
 import { useProfile } from "@/hooks/useProfile"
 import { hasOnboarded } from "@/lib/profile"
+import { nameForAgent, type AgentId } from "@/lib/agent-names"
+import { AGENT_ICON_MAP } from "@/components/ui/agent-icons"
 import { MessageDock, type DockAgent } from "@/components/ui/message-dock"
 
-// Hidden on splash/login/onboard and inside individual agent chats
-// (they have their own composer).
 const HIDE_EXACT = new Set(["/", "/login", "/onboard"])
 const HIDE_PREFIX = ["/agents/"]
 
-type AgentDef = {
-  id: string
-  name: string
-  role: string
-  color: string
-  Icon: LucideIcon
-}
+type AgentDef = { id: AgentId; role: string; color: string }
 
 const AGENTS: AgentDef[] = [
-  { id: "steward",    name: "Joseph",  role: "Your everyday companion", color: "#15803d", Icon: SproutIcon },
-  { id: "weather",    name: "Ken",     role: "Weather & spray",         color: "#0284c7", Icon: CloudSunRainIcon },
-  { id: "grants",     name: "Grace",   role: "Schemes & grants",        color: "#7c3aed", Icon: LandmarkIcon },
-  { id: "soil",       name: "Tom",     role: "Soil doctor",             color: "#a16207", Icon: WheatIcon },
-  { id: "vet_bridge", name: "Beth",    role: "Vet bridge",              color: "#dc2626", Icon: StethoscopeIcon },
-  { id: "market",     name: "Kim",     role: "Selling & markets",       color: "#ea580c", Icon: StoreIcon },
+  { id: "steward",    role: "Your everyday companion", color: "#166534" },
+  { id: "weather",    role: "Weather & spray",         color: "#0369a1" },
+  { id: "grants",     role: "Schemes & grants",        color: "#6d28d9" },
+  { id: "soil",       role: "Soil doctor",             color: "#78350f" },
+  { id: "vet_bridge", role: "Vet bridge",              color: "#b91c1c" },
+  { id: "market",     role: "Selling & markets",       color: "#c2410c" },
 ]
 
-/**
- * Positions responsively:
- * - Mobile (<sm): sits at TOP of viewport, since the bottom is taken by BottomNav.
- * - Desktop (≥sm): sits at BOTTOM (thumb-reach) since TopNav owns the top.
- */
 export function AgentMessageDock() {
   const pathname = usePathname()
   const router = useRouter()
@@ -51,23 +31,26 @@ export function AgentMessageDock() {
   if (HIDE_PREFIX.some((p) => pathname.startsWith(p))) return null
   if (!loaded || !hasOnboarded(profile)) return null
 
-  const dockAgents: DockAgent[] = AGENTS.map((a) => ({
-    id: a.id,
-    name: a.name,
-    role: a.role,
-    color: a.color,
-    icon: <a.Icon size={16} strokeWidth={2.2} />,
-    online: true,
-  }))
+  const gender = profile.voice_gender ?? "male"
+
+  const dockAgents: DockAgent[] = AGENTS.map((a) => {
+    const Icon = AGENT_ICON_MAP[a.id]
+    return {
+      id: a.id,
+      name: nameForAgent(a.id, gender),
+      role: a.role,
+      color: a.color,
+      icon: <Icon size={44} />,
+      online: true,
+    }
+  })
 
   return (
     <MessageDock
       agents={dockAgents}
       position="bottom"
       onSelect={(a) => {
-        if (a.id !== profile.agent_preference) {
-          update({ agent_preference: a.id })
-        }
+        if (a.id !== profile.agent_preference) update({ agent_preference: a.id })
       }}
       onSend={(message, agent) => {
         router.push(`/agents/${agent.id}?q=${encodeURIComponent(message)}`)

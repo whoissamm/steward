@@ -148,6 +148,7 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
             agentId,
             behaviourSummary: summary,
             profileContext: context,
+            voiceGender: profile.voice_gender ?? "male",
             imageBase64: imagePayload?.data,
             imageMime: imagePayload?.mime,
           },
