@@ -191,6 +191,43 @@ export default function SettingsPage() {
           value={profile.large_text}
           onChange={(v) => update({ large_text: v })}
         />
+        <Toggle
+          label="Remember conversations"
+          description="Keep your chat history on this device so agents remember what you talked about. Chats never leave your device."
+          value={profile.remember_chat ?? true}
+          onChange={(v) => {
+            if (!v) update({ remember_chat: false, chat_history: {} })
+            else update({ remember_chat: true })
+          }}
+        />
+      </section>
+
+      {/* Privacy + data control */}
+      <section className="card flex flex-col gap-3">
+        <div>
+          <p className="font-medium">Your data</p>
+          <p className="text-xs text-[color:var(--muted)]">
+            Your profile, todos, calendar, chats and profit ledger all live on this device.
+            Questions are sent to Google Gemini for answers; text is sent to ElevenLabs for voice.
+            Steward keeps nothing on our servers.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => update({ chat_history: {} })}
+          >
+            Clear chat history
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => update({ events: [], todos: [] })}
+          >
+            Clear calendar &amp; to-dos
+          </button>
+        </div>
       </section>
 
       <section className="card flex flex-col gap-3">

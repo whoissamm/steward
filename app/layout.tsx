@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/layout/BottomNav"
 import { ThemeSync } from "@/components/layout/ThemeSync"
 import { PwaRegister } from "@/components/layout/PwaRegister"
 import { AgentMessageDock } from "@/components/layout/AgentMessageDock"
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice"
 import { VerdantSwirl } from "@/components/ui/verdant-swirl"
 import { ProfileProvider } from "@/hooks/useProfile"
 
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <BottomNav />
           {children}
           <AgentMessageDock />
+          <PrivacyNotice />
         </ProfileProvider>
       </body>
     </html>

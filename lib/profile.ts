@@ -11,6 +11,15 @@ export type CalendarEvent = {
   done?: boolean
 }
 
+export type TodoItem = {
+  id: string
+  text: string
+  category?: "weather" | "livestock" | "soil" | "grants" | "records" | "general"
+  done?: boolean
+  created_at: string // ISO
+  source?: "chat" | "manual" | "plan"
+}
+
 export type ProfitEntry = {
   id: string
   date: string
@@ -26,11 +35,20 @@ export type ActivityLogEntry = {
   meta?: Record<string, unknown>
 }
 
+/** One turn of a conversation with a specific agent. Persisted per-agent so
+ *  switching pages doesn't lose context and Gemini can be prompted with prior
+ *  turns for continuity. */
+export type ChatTurn = { role: "user" | "assistant"; text: string; at: string }
+
 export type ProfileV2 = Profile & {
   completed_dates: string[] // ISO YYYY-MM-DD, for streak calendar
   events: CalendarEvent[]
+  todos: TodoItem[]           // user-added / chat-added todos (separate from dated calendar events)
   profit_entries: ProfitEntry[]
   activity_log: ActivityLogEntry[]
+  chat_history: Record<string, ChatTurn[]> // keyed by agent id
+  remember_chat: boolean       // user opt-in to persist chat_history
+  privacy_ack: boolean         // user has seen the one-time privacy notice
   agent_preference: string
   voice_gender: "male" | "female"
   onboarded_at?: string
@@ -53,8 +71,12 @@ export const DEFAULT_PROFILE: ProfileV2 = {
   quiz_done: [],
   completed_dates: [],
   events: [],
+  todos: [],
   profit_entries: [],
   activity_log: [],
+  chat_history: {},
+  remember_chat: true,
+  privacy_ack: false,
   agent_preference: "steward",
   voice_gender: "male",
 }
@@ -184,6 +206,12 @@ export function profileContextSummary(p: ProfileV2): string {
     parts.push(`Upcoming events: ${upcoming.join(" · ")}.`)
   } else {
     parts.push("No events currently in the calendar.")
+  }
+  const openTodos = (p.todos ?? []).filter((td) => !td.done).slice(0, 8)
+  if (openTodos.length > 0) {
+    parts.push(`Open to-dos: ${openTodos.map((td) => td.text).join(" · ")}.`)
+  } else {
+    parts.push("No open user to-dos.")
   }
   return parts.join(" ")
 }

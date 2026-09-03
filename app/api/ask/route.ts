@@ -16,6 +16,7 @@ type AskBody = {
   voice_gender?: "male" | "female"
   image_base64?: string
   image_mime?: string
+  history?: { role: "user" | "assistant"; text: string }[]
   profile?: {
     id?: string
     points?: number
@@ -90,6 +91,7 @@ export async function POST(req: NextRequest) {
     imageBase64,
     imageMime,
     voiceGender: body.voice_gender,
+    history: body.history,
   })
 
   const pointsEarned = 5

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { api, type AskResponse, type AgentAction } from "@/lib/api"
 import { useProfile } from "@/hooks/useProfile"
 import { useAudio } from "@/hooks/useAudio"
-import { behaviourSummary, profileContextSummary, type CalendarEvent } from "@/lib/profile"
+import { behaviourSummary, profileContextSummary, type CalendarEvent, type TodoItem } from "@/lib/profile"
 import { detectClientIntent } from "@/lib/intents"
 import { AnswerBubble, UserBubble } from "@/components/ask/ChatBubble"
 import { TypingIndicator } from "@/components/ask/TypingIndicator"
@@ -59,14 +59,79 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
   const seededRef = useRef(false)
   const idRef = useRef(0)
   const nextId = () => `t${++idRef.current}`
+  const hydratedRef = useRef(false)
   void audioLevel
+
+  // Hydrate turns from persisted per-agent chat history (once per mount).
+  // This is what stops the "chat vanishes when I leave the page" behaviour.
+  useEffect(() => {
+    if (hydratedRef.current) return
+    if (!profile.remember_chat) return
+    const history = profile.chat_history?.[agentId] ?? []
+    if (history.length === 0) return
+    // Pair user/assistant into Turn structures
+    const restored: Turn[] = []
+    for (let i = 0; i < history.length; i++) {
+      const h = history[i]
+      if (h.role === "user") {
+        restored.push({ id: `h${i}`, question: h.text })
+      } else if (h.role === "assistant" && restored.length > 0) {
+        const last = restored[restored.length - 1]
+        // Synthesize a minimal response shell — enough to render the bubble
+        last.response = {
+          answer: h.text,
+          sources: [],
+          confidence: "medium",
+          topic: "",
+          why: "",
+          abstained: false,
+          blocked: false,
+          is_crisis: false,
+          followups: [],
+          tip: null,
+          new_badges: [],
+          points_earned: 0,
+          total_points: profile.points,
+          level: "",
+        }
+      }
+    }
+    if (restored.length > 0) setTurns(restored)
+    idRef.current = restored.length + 10
+    hydratedRef.current = true
+  }, [agentId, profile.chat_history, profile.remember_chat, profile.points])
+
+  // Persist chat history whenever `turns` changes (if the user opted in)
+  useEffect(() => {
+    if (!hydratedRef.current) return
+    if (!profile.remember_chat) return
+    const flat: { role: "user" | "assistant"; text: string; at: string }[] = []
+    for (const t of turns) {
+      flat.push({ role: "user", text: t.question, at: new Date().toISOString() })
+      if (t.response) {
+        flat.push({ role: "assistant", text: t.response.answer, at: new Date().toISOString() })
+      }
+    }
+    // Keep only the last 30 turns (60 messages) per agent
+    const capped = flat.slice(-60)
+    const nextHistory = { ...(profile.chat_history ?? {}), [agentId]: capped }
+    // Only persist if content changed (cheap length + last-text check)
+    const prev = profile.chat_history?.[agentId] ?? []
+    if (prev.length !== capped.length || (capped.length > 0 && prev[prev.length - 1]?.text !== capped[capped.length - 1]?.text)) {
+      update({ chat_history: nextHistory })
+    }
+  }, [turns, agentId, profile.remember_chat, profile.chat_history, update])
 
   const applyActions = useCallback(
     (actions: AgentAction[]): AgentAction[] => {
       if (!actions || actions.length === 0) return []
       const applied: AgentAction[] = []
       const nextEvents: CalendarEvent[] = [...profile.events]
+      const nextTodos: TodoItem[] = [...(profile.todos ?? [])]
       let nextCompletedDates = profile.completed_dates
+      let eventsChanged = false
+      let todosChanged = false
+
       for (const a of actions) {
         if (a.kind === "add_event") {
           nextEvents.push({
@@ -75,30 +140,44 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
             title: a.title,
             kind: a.category ?? "todo",
           })
+          eventsChanged = true
           applied.push(a)
         } else if (a.kind === "add_todo") {
-          // Todos live in `events` too (as `todo` kind) — dated today
-          const today = new Date()
-          const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
-          nextEvents.push({
+          nextTodos.push({
             id: `t-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            date: iso,
-            title: a.text,
-            kind: "todo",
+            text: a.text,
+            category: a.category,
+            done: false,
+            created_at: new Date().toISOString(),
+            source: "chat",
           })
+          todosChanged = true
           applied.push(a)
         } else if (a.kind === "log_note") {
           logActivity(`note`, { text: a.text })
           applied.push(a)
         } else if (a.kind === "mark_todo_done") {
+          // Match by text (loose contains) or id — mark the first open todo
+          const idx = nextTodos.findIndex(
+            (t) =>
+              !t.done &&
+              (t.id === a.id_or_text || t.text.toLowerCase().includes(a.id_or_text.toLowerCase())),
+          )
+          if (idx >= 0) {
+            nextTodos[idx] = { ...nextTodos[idx], done: true }
+            todosChanged = true
+          }
           const iso = new Date().toISOString().slice(0, 10)
           if (!nextCompletedDates.includes(iso)) nextCompletedDates = [...nextCompletedDates, iso].sort()
           applied.push(a)
         }
       }
-      if (nextEvents.length !== profile.events.length || nextCompletedDates !== profile.completed_dates) {
-        update({ events: nextEvents, completed_dates: nextCompletedDates })
-      }
+
+      const patch: Partial<typeof profile> = {}
+      if (eventsChanged) patch.events = nextEvents
+      if (todosChanged) patch.todos = nextTodos
+      if (nextCompletedDates !== profile.completed_dates) patch.completed_dates = nextCompletedDates
+      if (Object.keys(patch).length > 0) update(patch)
       return applied
     },
     [profile, update, logActivity],
@@ -151,6 +230,14 @@ export function AgentChat({ agentId, agentName, agentColor, greeting, suggestion
             voiceGender: profile.voice_gender ?? "male",
             imageBase64: imagePayload?.data,
             imageMime: imagePayload?.mime,
+            // Prior turns from THIS session's UI state — gives Gemini
+            // conversational continuity within the current chat.
+            history: turns.flatMap((t) => {
+              const arr: { role: "user" | "assistant"; text: string }[] = []
+              arr.push({ role: "user", text: t.question })
+              if (t.response) arr.push({ role: "assistant", text: t.response.answer })
+              return arr
+            }),
           },
         )
         // Server actions come first; if empty, try to salvage intent from the
@@ -336,10 +423,11 @@ function AppliedActionRow({ action }: { action: AgentAction }) {
   let label = ""
   if (action.kind === "add_event") {
     Icon = CalendarPlusIcon
-    label = `Added to calendar: ${action.title} on ${action.date}`
+    const friendlyDate = new Date(action.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })
+    label = `Added to calendar: ${action.title} · ${friendlyDate}`
   } else if (action.kind === "add_todo") {
     Icon = ListPlusIcon
-    label = `Added to today's list: ${action.text}`
+    label = `Added to your to-do list: ${action.text}`
   } else if (action.kind === "mark_todo_done") {
     Icon = CheckCircle2Icon
     label = `Marked done: ${action.id_or_text}`

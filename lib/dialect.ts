@@ -1,18 +1,27 @@
 // Regional dialect greetings + client-side input normaliser.
 // The backend also normalises input; this mirror lets us preview UX without a round-trip.
 
-export const ACCENTS: { id: string; label: string; greeting: string; region: string }[] = [
-  { id: "standard", label: "Standard English", greeting: "Hello", region: "Neutral" },
-  { id: "southern", label: "Southern", greeting: "Hello", region: "Home Counties" },
-  { id: "geordie", label: "Geordie", greeting: "Howay", region: "Newcastle" },
-  { id: "mackem", label: "Mackem", greeting: "Wey aye", region: "Sunderland" },
-  { id: "durham", label: "Durham", greeting: "Noo then", region: "County Durham" },
-  { id: "scouse", label: "Scouse", greeting: "Ey up, la", region: "Liverpool" },
-  { id: "scots", label: "Scots", greeting: "Aye", region: "Scotland" },
-  { id: "yorkshire", label: "Yorkshire", greeting: "Ey up", region: "Yorkshire" },
-  { id: "westcountry", label: "West Country", greeting: "Alright me lover", region: "SW England" },
-  { id: "brummie", label: "Brummie", greeting: "Alroight", region: "Birmingham" },
-  { id: "cockney", label: "Cockney", greeting: "Oi oi", region: "East London" },
+export const ACCENTS: {
+  id: string
+  label: string
+  greeting: string
+  region: string
+  /** Distinctive spoken phrase for the accent-preview player. Written with
+      regional vocabulary already baked in so the voice model actually says
+      "howay", "aye", "reyt", etc. — no reliance on dialectify() to add flavour. */
+  previewPhrase: string
+}[] = [
+  { id: "standard",    label: "Standard English", greeting: "Hello",             region: "Neutral",        previewPhrase: "Good morning. This is your farm companion — I'll speak in a clear, standard English voice, and I'll be with you throughout the day." },
+  { id: "southern",    label: "Southern",         greeting: "Hello",             region: "Home Counties",  previewPhrase: "Rather a splendid morning, don't you think? Awfully good weather for a walk round the top field before elevenses." },
+  { id: "geordie",     label: "Geordie",          greeting: "Howay",             region: "Newcastle",      previewPhrase: "Howay man, that's a canny bonny mornin' on the Tyne. Away an' get the kettle on, pet, afore we head oot te feed them beasts." },
+  { id: "mackem",      label: "Mackem",           greeting: "Wey aye",           region: "Sunderland",     previewPhrase: "Wey aye pet, we'll gan doon te the fields, sort them yows oot, an' be back for a bait afore ye knaa it. Ha'way." },
+  { id: "durham",      label: "Durham",           greeting: "Noo then",          region: "County Durham",  previewPhrase: "Noo then marra, wor lass reckons the ewes are lookin' champion this mornin'. Should be a canny day oot, like." },
+  { id: "scouse",      label: "Scouse",           greeting: "Ey up, la",         region: "Liverpool",      previewPhrase: "Ey up la, weather's boss today, sound as a pound. Right, let's gerrout to dem fields — no messin' aboot now." },
+  { id: "scots",       label: "Scots",            greeting: "Aye",               region: "Scotland",       previewPhrase: "Aye, it's a right bonnie mornin', so it is. We'll tak the wee tractor doon tae the bottom field an' see how yer barley's gettin' on. Nae bother." },
+  { id: "yorkshire",   label: "Yorkshire",        greeting: "Ey up",             region: "Yorkshire",      previewPhrase: "Ey up flower, t'ewes are champion this mornin'. Reyt, get t'kettle on an' we'll 'ave a brew afore we 'ead out int' top field." },
+  { id: "westcountry", label: "West Country",     greeting: "Alright me lover",  region: "SW England",     previewPhrase: "Alright me lover, proper 'ansum mornin' fer a wander round the fields. Reckon we'll 'ave a drop o' scrumpy after, eh? Proper job." },
+  { id: "brummie",     label: "Brummie",          greeting: "Alroight",          region: "Birmingham",     previewPhrase: "Alroight bab, that's bostin weather fer the farm today. Yower fields look proper noice — let's gew an' 'av a scoot round afore dinner." },
+  { id: "cockney",     label: "Cockney",          greeting: "Oi oi",             region: "East London",    previewPhrase: "Cor blimey guv, right proper day fer a bit o' graft on the farm, innit? Get the kettle on an' we'll 'ave a butcher's at them cows." },
 ]
 
 export function greetingFor(accent: string, name: string): string {

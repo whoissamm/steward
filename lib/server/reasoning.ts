@@ -28,44 +28,66 @@ export type MultimodalPart =
   | { text: string }
   | { inlineData: { mimeType: string; data: string } }
 
-async function callGemini(system: string, parts: MultimodalPart[]): Promise<string | null> {
+type GeminiContent = { role: "user" | "model"; parts: MultimodalPart[] }
+
+/**
+ * Build the Gemini `contents` array. If prior chat history is provided we
+ * prepend it (mapped: user → user, assistant → model) so the model has
+ * conversational memory across turns.
+ */
+function buildContents(
+  parts: MultimodalPart[],
+  history?: { role: "user" | "assistant"; text: string }[],
+): GeminiContent[] {
+  const contents: GeminiContent[] = []
+  if (history && history.length > 0) {
+    // Cap: last 6 turns keeps prompt small
+    for (const h of history.slice(-6)) {
+      contents.push({
+        role: h.role === "assistant" ? "model" : "user",
+        parts: [{ text: h.text }],
+      })
+    }
+  }
+  contents.push({ role: "user", parts })
+  return contents
+}
+
+async function callGemini(
+  system: string,
+  parts: MultimodalPart[],
+  history?: { role: "user" | "assistant"; text: string }[],
+): Promise<string | null> {
   const key = process.env.GEMINI_API_KEY
   if (!key) return null
   const model = process.env.GEMINI_MODEL || DEFAULT_MODEL
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+  const contents = buildContents(parts, history)
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: system }] },
+    contents,
+    generationConfig: { temperature: 0.55, maxOutputTokens: 700, topP: 0.95 },
+  })
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-goog-api-key": key },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts }],
-        generationConfig: {
-          temperature: 0.55,
-          maxOutputTokens: 700,
-          topP: 0.95,
-        },
-      }),
+      body,
     })
     if (res.status === 429) {
-      // Free-tier rate limit — quick retry once after ~1s, then fail
       await new Promise((r) => setTimeout(r, 1100))
       const retry = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-goog-api-key": key },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: system }] },
-          contents: [{ role: "user", parts }],
-          generationConfig: { temperature: 0.55, maxOutputTokens: 700, topP: 0.95 },
-        }),
+        body,
       })
       if (!retry.ok) return null
       const data2 = (await retry.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
       return data2.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("").trim() || null
     }
     if (!res.ok) {
-      const body = await res.text().catch(() => "")
-      console.error("gemini http", res.status, body.slice(0, 200))
+      const errBody = await res.text().catch(() => "")
+      console.error("gemini http", res.status, errBody.slice(0, 200))
       return null
     }
     const data = (await res.json()) as {
@@ -149,6 +171,7 @@ export type AskOptions = {
   imageBase64?: string
   imageMime?: string
   voiceGender?: "male" | "female"
+  history?: { role: "user" | "assistant"; text: string }[]
 }
 
 /**
@@ -218,7 +241,7 @@ export async function askInternal(question: string, opts: AskOptions = {}): Prom
       parts.push({ inlineData: { mimeType: opts.imageMime, data: opts.imageBase64 } })
     }
 
-    const raw = await callGemini(baseSystem + TOOL_INSTRUCTIONS, parts)
+    const raw = await callGemini(baseSystem + TOOL_INSTRUCTIONS, parts, opts.history)
     if (raw) {
       const { cleanText, actions } = extractActions(raw)
       return {
@@ -254,7 +277,7 @@ For this reply you do NOT have a matching document in the farm knowledge base �
     parts.push({ inlineData: { mimeType: opts.imageMime, data: opts.imageBase64 } })
   }
 
-  const raw2 = await callGemini(generalSystem, parts)
+  const raw2 = await callGemini(generalSystem, parts, opts.history)
   if (raw2) {
     const { cleanText, actions } = extractActions(raw2)
     return {

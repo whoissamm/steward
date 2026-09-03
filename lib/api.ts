@@ -108,6 +108,7 @@ export const api = {
       voiceGender?: "male" | "female"
       imageBase64?: string
       imageMime?: string
+      history?: { role: "user" | "assistant"; text: string }[]
     },
   ): Promise<AskResponse> {
     const slim = profile
@@ -130,6 +131,7 @@ export const api = {
         voice_gender: opts?.voiceGender,
         image_base64: opts?.imageBase64,
         image_mime: opts?.imageMime,
+        history: opts?.history,
       }),
     })
   },

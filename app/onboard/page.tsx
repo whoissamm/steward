@@ -176,7 +176,7 @@ export default function OnboardPage() {
                   })}
                 </div>
               </div>
-              <AccentPicker value={accent} onChange={setAccent} name={name} />
+              <AccentPicker value={accent} onChange={setAccent} name={name} voiceGender={voiceGender} />
               <p className="text-sm text-[color:var(--muted)] italic px-1">
                 Preview: &ldquo;{accentGreetingPreview(accent, name)}&rdquo;
               </p>
